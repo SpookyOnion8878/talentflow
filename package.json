@@ -1,0 +1,38 @@
+{
+  "name": "talentflow",
+  "private": true,
+  "scripts": {
+    "build": "dotenv -e ./.env --allow-missing -- turbo run build",
+    "dev": "dotenv -e ./.env --allow-missing -- turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "db:push": "dotenv -e ./.env --allow-missing -- turbo run db:push --filter=@repo/db",
+    "db:generate": "dotenv -e ./.env --allow-missing -- turbo run db:generate --filter=@repo/db",
+    "db:seed": "dotenv -e ./.env --allow-missing -- turbo run db:seed --filter=@repo/db",
+    "db:studio": "dotenv -e ./.env --allow-missing -- turbo run db:studio --filter=@repo/db",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.7.4",
+    "turbo": "^2.9.6",
+    "typescript": "5.9.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "*.{md,json}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

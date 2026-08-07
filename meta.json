@@ -1,0 +1,5 @@
+{
+  "name": "TalentFlow",
+  "description": "TalentFlow is a freelancer management platform - a monorepo with a Next.js web app, shared UI, utilities, validators, email, and database packages.",
+  "maintainedByCoreTeam": false
+}
