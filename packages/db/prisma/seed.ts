@@ -42,7 +42,18 @@ async function main() {
     },
   });
 
-  const demoUserIds = [admin.id, manager.id, finance.id];
+  const viewer = await prisma.user.upsert({
+    where: { email: "viewer@talentflow.dev" },
+    update: {},
+    create: {
+      email: "viewer@talentflow.dev",
+      name: "Viewer User",
+      role: "VIEWER",
+      password: hashPassword("password123"),
+    },
+  });
+
+  const demoUserIds = [admin.id, manager.id, finance.id, viewer.id];
 
   // ─── Company (reset demo data, seat idempotent) ───
   await prisma.notification.deleteMany({
@@ -85,6 +96,13 @@ async function main() {
         role: "FINANCE",
         status: "ACTIVE",
         joinedAt: new Date(Date.now() - 300 * DAY),
+      },
+      {
+        userId: viewer.id,
+        companyId: company.id,
+        role: "VIEWER",
+        status: "ACTIVE",
+        joinedAt: new Date(Date.now() - 200 * DAY),
       },
     ],
   });
@@ -1046,9 +1064,16 @@ async function main() {
   });
 
   console.log("Seed completed.");
-  console.log("  Admin login:    admin@talentflow.dev / password123");
-  console.log("  Manager login:  manager@talentflow.dev / password123");
-  console.log("  Finance login:  finance@talentflow.dev / password123");
+  console.log("  Admin login:    admin@talentflow.dev  / password123  (OWNER)");
+  console.log(
+    "  Manager login:  manager@talentflow.dev / password123  (MANAGER)",
+  );
+  console.log(
+    "  Finance login:  finance@talentflow.dev / password123  (FINANCE)",
+  );
+  console.log(
+    "  Viewer login:   viewer@talentflow.dev  / password123  (VIEWER)",
+  );
 }
 
 main()
