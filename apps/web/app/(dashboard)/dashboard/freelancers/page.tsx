@@ -43,7 +43,7 @@ export default function FreelancersPage() {
         title="Freelancers"
         description="Manage your freelancers and contractors"
         action={{
-          label: "+ Add Freelancer",
+          label: "Add Freelancer",
           href: "/dashboard/freelancers/new",
         }}
       />

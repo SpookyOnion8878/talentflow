@@ -51,7 +51,7 @@ export default function InvoicesPage() {
         title="Invoices"
         description="Generate and track invoices"
         action={{
-          label: "+ Generate Invoice",
+          label: "Generate Invoice",
           href: "/dashboard/invoices/new",
         }}
       />

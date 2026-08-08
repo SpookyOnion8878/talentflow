@@ -17,7 +17,7 @@ export default async function ProjectsPage() {
       <PageHeader
         title="Projects"
         description="Track projects, budgets, and team assignments"
-        action={{ label: "+ New Project", href: "/dashboard/projects/new" }}
+        action={{ label: "New Project", href: "/dashboard/projects/new" }}
       />
 
       {data.length === 0 ? (

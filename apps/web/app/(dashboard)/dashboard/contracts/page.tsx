@@ -49,7 +49,7 @@ export default function ContractsPage() {
       <PageHeader
         title="Contracts"
         description="Generate, sign, and manage contracts"
-        action={{ label: "+ New Contract", href: "/dashboard/contracts/new" }}
+        action={{ label: "New Contract", href: "/dashboard/contracts/new" }}
       />
 
       <div className="flex gap-3">
