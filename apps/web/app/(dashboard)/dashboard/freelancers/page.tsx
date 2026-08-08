@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -55,12 +55,12 @@ export default function FreelancersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search freelancers..."
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
         >
           <option value="ALL">All Status</option>
           <option value="ACTIVE">Active</option>
@@ -72,7 +72,7 @@ export default function FreelancersPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="rounded-xl border bg-white p-8 text-center text-sm text-gray-500">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -81,46 +81,46 @@ export default function FreelancersPage() {
           description="Add your first freelancer to get started"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Skills
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Country
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Rating
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
                   Contracts
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {data.data.map((f) => (
-                <tr key={f.id} className="hover:bg-gray-50">
+                <tr key={f.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
                         {`${f.firstName.charAt(0)}${f.lastName.charAt(0)}`}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-slate-900">
                           {f.firstName} {f.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">{f.email}</p>
+                        <p className="text-xs text-slate-500">{f.email}</p>
                       </div>
                     </div>
                   </td>
@@ -129,28 +129,28 @@ export default function FreelancersPage() {
                       {f.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                          className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
                         >
                           {skill}
                         </span>
                       ))}
                       {f.skills.length > 3 && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
                           +{f.skills.length - 3}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                     {f.country ?? "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <StatusBadge status={f.status} />
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                     ⭐ {f.rating.toFixed(1)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                     {f._count.contracts}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">

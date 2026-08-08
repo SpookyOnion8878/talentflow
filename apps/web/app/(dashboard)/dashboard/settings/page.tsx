@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -97,8 +97,8 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-2xl font-bold text-slate-900">Settings</h2>
+        <p className="text-sm text-slate-500">
           Manage your account, company, and team settings
         </p>
       </div>
@@ -106,43 +106,43 @@ export default function SettingsPage() {
       {/* Company Settings */}
       <form
         onSubmit={handleSave}
-        className="rounded-xl border bg-white p-6 shadow-sm"
+        className="rounded-xl border border-slate-200 bg-white p-6 shadow-card"
       >
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-slate-900">
           Company Information
         </h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Company Name
             </label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Industry
             </label>
             <input
               type="text"
               value={form.industry}
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Website
             </label>
             <input
               type="url"
               value={form.website}
               onChange={(e) => setForm({ ...form, website: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
         </div>
@@ -159,8 +159,8 @@ export default function SettingsPage() {
       </form>
 
       {/* Plan & Billing */}
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900">Plan & Billing</h3>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 className="text-lg font-semibold text-slate-900">Plan & Billing</h3>
         <div className="mt-4 flex items-center justify-between rounded-lg bg-primary-50 p-4">
           <div>
             <p className="font-medium text-primary-900">
@@ -186,19 +186,19 @@ export default function SettingsPage() {
 
       {/* Team Members */}
       {!membersError && (
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-slate-900">
               Team Members
             </h3>
           </div>
 
           <form
             onSubmit={handleInvite}
-            className="mt-4 flex items-end gap-3 rounded-lg bg-gray-50 p-4"
+            className="mt-4 flex items-end gap-3 rounded-lg bg-slate-50 p-4"
           >
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Invite by email
               </label>
               <input
@@ -206,18 +206,18 @@ export default function SettingsPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="teammate@company.com"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Role
               </label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="ADMIN">Admin</option>
                 <option value="MANAGER">Manager</option>
@@ -244,15 +244,15 @@ export default function SettingsPage() {
                 className="flex items-center justify-between py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-900">
                     {member.user.name ?? member.user.email}
                   </p>
-                  <p className="text-xs text-gray-500">{member.user.email}</p>
+                  <p className="text-xs text-slate-500">{member.user.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={member.status} />
                   {member.role === "OWNER" ? (
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                       {ROLE_LABELS[member.role]}
                     </span>
                   ) : (
@@ -264,7 +264,7 @@ export default function SettingsPage() {
                           e.target.value as MemberRole,
                         )
                       }
-                      className="rounded-lg border border-gray-300 px-2 py-1 text-xs focus:border-primary-500 focus:outline-none"
+                      className="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-primary-500 focus:outline-none"
                     >
                       <option value="ADMIN">Admin</option>
                       <option value="MANAGER">Manager</option>
@@ -276,7 +276,9 @@ export default function SettingsPage() {
               </div>
             ))}
             {members?.length === 0 && (
-              <p className="py-3 text-sm text-gray-500">No team members yet.</p>
+              <p className="py-3 text-sm text-slate-500">
+                No team members yet.
+              </p>
             )}
           </div>
         </div>

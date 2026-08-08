@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Zap, Mail, Lock, User, Building2, ArrowRight } from "lucide-react";
+import { AuthShell } from "@/components/auth-shell";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,42 +49,40 @@ export default function RegisterPage() {
     }
   };
 
+  const inputClass =
+    "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-3xl font-bold text-primary-600">
-            TalentFlow
-          </Link>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">
+    <AuthShell>
+      <div className="space-y-6">
+        <div className="text-center lg:text-left">
+          <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient shadow-lg shadow-primary-500/25 lg:hidden">
+            <Zap className="h-6 w-6 text-white" fill="currentColor" />
+          </span>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              Sign in
-            </Link>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Start managing your freelance workforce today.
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Full Name
-              </label>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Full Name
+            </label>
+            <div className="relative">
+              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="name"
                 name="name"
@@ -91,17 +91,20 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 minLength={2}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className={`${inputClass} pl-9`}
                 placeholder="John Doe"
               />
             </div>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Work Email
-              </label>
+          </div>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Work Email
+            </label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="email"
                 name="email"
@@ -109,17 +112,20 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className={`${inputClass} pl-9`}
                 placeholder="you@company.com"
               />
             </div>
-            <div>
-              <label
-                htmlFor="company"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Company Name
-              </label>
+          </div>
+          <div>
+            <label
+              htmlFor="company"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Company Name
+            </label>
+            <div className="relative">
+              <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="company"
                 name="company"
@@ -128,17 +134,20 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 minLength={2}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className={`${inputClass} pl-9`}
                 placeholder="Acme Corporation"
               />
             </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="password"
                 name="password"
@@ -147,7 +156,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 minLength={8}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className={`${inputClass} pl-9`}
                 placeholder="Minimum 8 characters"
               />
             </div>
@@ -156,17 +165,27 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Create Account"}
+            {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
 
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-center text-xs text-slate-400">
             By registering, you agree to our Terms of Service and Privacy
             Policy.
           </p>
+          <p className="text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-primary-600 hover:text-primary-500"
+            >
+              Sign in
+            </Link>
+          </p>
         </form>
       </div>
-    </div>
+    </AuthShell>
   );
 }

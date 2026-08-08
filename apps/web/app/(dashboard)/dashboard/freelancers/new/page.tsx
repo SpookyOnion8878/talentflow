@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -104,10 +104,10 @@ export default function AddFreelancerPage() {
         >
           &larr; Back to Freelancers
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-gray-900">
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">
           Add New Freelancer
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-slate-500">
           Fill in the details to onboard a new freelancer
         </p>
       </div>
@@ -120,13 +120,13 @@ export default function AddFreelancerPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Personal Information
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 First Name *
               </label>
               <input
@@ -134,12 +134,12 @@ export default function AddFreelancerPage() {
                 value={form.firstName}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="Jane"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Last Name *
               </label>
               <input
@@ -147,12 +147,12 @@ export default function AddFreelancerPage() {
                 value={form.lastName}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="Doe"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Email *
               </label>
               <input
@@ -161,19 +161,19 @@ export default function AddFreelancerPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="jane@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Phone
               </label>
               <input
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -181,20 +181,20 @@ export default function AddFreelancerPage() {
         </div>
 
         {/* Location & Currency */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Location & Currency
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Country
               </label>
               <select
                 name="country"
                 value={form.country}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="">Select country</option>
                 {COUNTRIES.map((c) => (
@@ -205,26 +205,26 @@ export default function AddFreelancerPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 City
               </label>
               <input
                 name="city"
                 value={form.city}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 placeholder="San Francisco"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Currency
               </label>
               <select
                 name="currency"
                 value={form.currency}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="USD">USD - US Dollar</option>
                 <option value="EUR">EUR - Euro</option>
@@ -237,8 +237,8 @@ export default function AddFreelancerPage() {
         </div>
 
         {/* Skills */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">Skills</h3>
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">Skills</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {SKILL_OPTIONS.map((skill) => (
               <button
@@ -248,7 +248,7 @@ export default function AddFreelancerPage() {
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                   form.skills.includes(skill)
                     ? "bg-primary-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {form.skills.includes(skill) ? "✓ " : "+ "}
@@ -259,44 +259,44 @@ export default function AddFreelancerPage() {
         </div>
 
         {/* Banking & Tax */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Banking & Tax Information
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Bank Name
               </label>
               <input
                 name="bankName"
                 value={form.bankName}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 placeholder="Chase Bank"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Bank Account Number
               </label>
               <input
                 name="bankAccount"
                 value={form.bankAccount}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 placeholder="****1234"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Tax ID
               </label>
               <input
                 name="taxId"
                 value={form.taxId}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 placeholder="Tax identification number"
               />
             </div>
@@ -304,8 +304,8 @@ export default function AddFreelancerPage() {
         </div>
 
         {/* Notes */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Additional Notes
           </h3>
           <textarea
@@ -313,7 +313,7 @@ export default function AddFreelancerPage() {
             value={form.notes}
             onChange={handleChange}
             rows={3}
-            className="mt-4 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            className="mt-4 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
             placeholder="Any additional notes about this freelancer..."
           />
         </div>
@@ -322,7 +322,7 @@ export default function AddFreelancerPage() {
         <div className="flex justify-end gap-3">
           <Link
             href="/dashboard/freelancers"
-            className="rounded-lg border px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Cancel
           </Link>

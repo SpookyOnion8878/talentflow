@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -52,10 +52,10 @@ export default function AssignFreelancerPage() {
         >
           &larr; Back to {project.data?.name ?? "Project"}
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-gray-900">
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">
           Assign Freelancer
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-slate-500">
           Add a freelancer to this project team
         </p>
       </div>
@@ -71,26 +71,26 @@ export default function AssignFreelancerPage() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-slate-700">
             Role (optional)
           </label>
           <input
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             placeholder="e.g. Frontend Developer"
           />
         </div>
 
         {freelancers.isLoading ? (
-          <p className="py-8 text-center text-sm text-gray-500">
+          <p className="py-8 text-center text-sm text-slate-500">
             Loading freelancers...
           </p>
         ) : available.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-slate-600">
               No unassigned freelancers available.
             </p>
             <Link
@@ -112,10 +112,10 @@ export default function AssignFreelancerPage() {
                     {f.firstName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-slate-900">
                       {f.firstName} {f.lastName}
                     </p>
-                    <p className="text-xs text-gray-500">{f.email}</p>
+                    <p className="text-xs text-slate-500">{f.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

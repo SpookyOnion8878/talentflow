@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -66,7 +66,7 @@ export default function TimesheetsPage() {
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               status === s
                 ? "bg-primary-600 text-white"
-                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                : "border border-slate-300 text-slate-700 hover:bg-slate-50"
             }`}
           >
             {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -80,7 +80,7 @@ export default function TimesheetsPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border bg-white p-8 text-center text-sm text-gray-500">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -93,7 +93,7 @@ export default function TimesheetsPage() {
           {data.data.map((t) => (
             <div
               key={t.id}
-              className="rounded-xl border bg-white p-5 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white shadow-card p-5 shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
@@ -101,18 +101,18 @@ export default function TimesheetsPage() {
                     {t.freelancer.firstName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-slate-900">
                       {t.freelancer.firstName} {t.freelancer.lastName}
-                      <span className="ml-2 text-xs font-normal text-gray-500">
+                      <span className="ml-2 text-xs font-normal text-slate-500">
                         {formatDate(t.date)}
                       </span>
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-500">
                       {t.project?.name ?? "No project"} • {t.hours}h
                       {t.contract && ` • ${t.contract.contractNo}`}
                     </p>
                     {t.description && (
-                      <p className="mt-1 text-xs text-gray-600">
+                      <p className="mt-1 text-xs text-slate-600">
                         {t.description}
                       </p>
                     )}
@@ -134,7 +134,7 @@ export default function TimesheetsPage() {
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="Reason for rejection..."
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                         autoFocus
                       />
                       <button
@@ -148,7 +148,7 @@ export default function TimesheetsPage() {
                           setRejectingId(null);
                           setReason("");
                         }}
-                        className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                        className="rounded-lg border px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
                       >
                         Cancel
                       </button>

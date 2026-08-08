@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 
 type PageHeaderProps = {
   title: string;
@@ -8,16 +9,21 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-        {description && <p className="text-sm text-gray-500">{description}</p>}
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          {title}
+        </h2>
+        {description && (
+          <p className="mt-1 text-sm text-slate-500">{description}</p>
+        )}
       </div>
       {action && (
         <Link
           href={action.href}
-          className="rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
         >
+          <Plus className="h-4 w-4" />
           {action.label}
         </Link>
       )}

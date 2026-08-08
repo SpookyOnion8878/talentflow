@@ -1,4 +1,4 @@
-import { caller } from "@/lib/trpc/caller";
+﻿import { caller } from "@/lib/trpc/caller";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency } from "@repo/utils";
 
@@ -57,21 +57,21 @@ export default async function ReportsPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Monthly Spending */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Spending Overview
           </h3>
           <div className="mt-4 space-y-4">
             <div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">
+                <span className="text-slate-600">
                   Monthly spend (approved hours)
                 </span>
                 <span className="font-medium">
                   {stats.stats.monthlySpendLabel}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-gray-200">
+              <div className="mt-1 h-2 rounded-full bg-slate-200">
                 <div
                   className="h-2 rounded-full bg-primary-500"
                   style={{ width: `${spendPercent}%` }}
@@ -80,12 +80,12 @@ export default async function ReportsPage() {
             </div>
             <div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Total paid</span>
+                <span className="text-slate-600">Total paid</span>
                 <span className="font-medium">
                   {stats.stats.totalPaidLabel}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-gray-200">
+              <div className="mt-1 h-2 rounded-full bg-slate-200">
                 <div
                   className="h-2 rounded-full bg-green-500"
                   style={{ width: `${paidPercent}%` }}
@@ -94,12 +94,12 @@ export default async function ReportsPage() {
             </div>
             <div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Outstanding</span>
+                <span className="text-slate-600">Outstanding</span>
                 <span className="font-medium text-yellow-600">
                   {stats.stats.totalOutstandingLabel}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-gray-200">
+              <div className="mt-1 h-2 rounded-full bg-slate-200">
                 <div
                   className="h-2 rounded-full bg-yellow-500"
                   style={{ width: `${outstandingPercent}%` }}
@@ -110,24 +110,24 @@ export default async function ReportsPage() {
         </div>
 
         {/* Budget status */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Project Budgets
           </h3>
           <div className="mt-4 space-y-4">
             {stats.budgetOverview.length === 0 && (
-              <p className="text-sm text-gray-500">No active projects.</p>
+              <p className="text-sm text-slate-500">No active projects.</p>
             )}
             {stats.budgetOverview.map((p) => (
               <div key={p.id}>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{p.name}</span>
+                  <span className="text-slate-600">{p.name}</span>
                   <span className="font-medium">
                     {formatCurrency(p.spent)} / {formatCurrency(p.budget)} (
                     {p.percentUsed}%)
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-gray-200">
+                <div className="mt-1 h-2 rounded-full bg-slate-200">
                   <div
                     className={`h-2 rounded-full ${p.percentUsed > 90 ? "bg-orange-500" : "bg-green-500"}`}
                     style={{ width: `${p.percentUsed}%` }}
@@ -139,8 +139,10 @@ export default async function ReportsPage() {
         </div>
 
         {/* Invoice Aging */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">Invoice Aging</h3>
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
+            Invoice Aging
+          </h3>
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
             <div className="rounded-lg bg-green-50 p-4">
               <p className="text-2xl font-bold text-green-700">
@@ -164,8 +166,8 @@ export default async function ReportsPage() {
         </div>
 
         {/* Compliance Score */}
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-slate-900">
             Compliance Score
           </h3>
           <div className="mt-4 text-center">
@@ -190,7 +192,7 @@ export default async function ReportsPage() {
                 {complianceScore}%
               </span>
             </div>
-            <p className="mt-4 text-sm text-gray-600">
+            <p className="mt-4 text-sm text-slate-600">
               {compliance.summary.verified} of {compliance.summary.total}{" "}
               documents verified
             </p>
@@ -199,16 +201,16 @@ export default async function ReportsPage() {
       </div>
 
       {/* Utilization */}
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 className="text-base font-semibold text-slate-900">
           Timesheet Summary
         </h3>
         <div className="mt-4 grid gap-6 sm:grid-cols-3">
-          <div className="rounded-lg bg-blue-50 p-4 text-center">
-            <p className="text-2xl font-bold text-blue-700">
+          <div className="rounded-lg bg-primary-50 p-4 text-center">
+            <p className="text-2xl font-bold text-primary-700">
               {timesheets.totalHours}h
             </p>
-            <p className="text-xs text-blue-600">Approved hours</p>
+            <p className="text-xs text-primary-600">Approved hours</p>
           </div>
           <div className="rounded-lg bg-yellow-50 p-4 text-center">
             <p className="text-2xl font-bold text-yellow-700">
@@ -216,31 +218,33 @@ export default async function ReportsPage() {
             </p>
             <p className="text-xs text-yellow-600">Pending approval</p>
           </div>
-          <div className="rounded-lg bg-gray-50 p-4 text-center">
-            <p className="text-2xl font-bold text-gray-700">
+          <div className="rounded-lg bg-slate-50 p-4 text-center">
+            <p className="text-2xl font-bold text-slate-700">
               {timesheets.entryCount}
             </p>
-            <p className="text-xs text-gray-600">Total entries</p>
+            <p className="text-xs text-slate-600">Total entries</p>
           </div>
         </div>
       </div>
 
       {/* Activity feed */}
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900">Latest Activity</h3>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+        <h3 className="text-lg font-semibold text-slate-900">
+          Latest Activity
+        </h3>
         <div className="mt-4 divide-y">
           {activity.map((entry) => (
             <div
               key={entry.id}
               className="flex items-center justify-between py-2.5"
             >
-              <p className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">
+              <p className="text-sm text-slate-700">
+                <span className="font-medium text-slate-900">
                   {entry.action}
                 </span>
-                <span className="text-gray-400"> — {entry.user}</span>
+                <span className="text-slate-400"> — {entry.user}</span>
               </p>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-slate-400">
                 {new Date(entry.createdAt).toLocaleDateString()}
               </span>
             </div>
@@ -248,7 +252,7 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-slate-400">
         Data as of {new Date(now).toLocaleString()} — spend is calculated from
         approved timesheets × contract rates.
       </p>
