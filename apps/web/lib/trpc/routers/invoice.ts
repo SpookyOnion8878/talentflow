@@ -5,6 +5,7 @@ import { Prisma } from "@repo/db";
 import type { InvoiceStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { generateInvoiceNumber } from "@repo/utils";
+import { enqueueAgentJob } from "@repo/agents";
 
 const financeGuard = requireRole("OWNER", "ADMIN", "FINANCE");
 
@@ -119,6 +120,16 @@ export const invoiceRouter = router({
         entityId: invoice.id,
         metadata: { invoiceNo: invoice.invoiceNo, amount: invoice.totalAmount },
       });
+
+      try {
+        await enqueueAgentJob(ctx.prisma, {
+          companyId: ctx.companyId,
+          agentType: "BILLING",
+          triggerType: "INVOICE_STATUS_CHANGED",
+        });
+      } catch (err) {
+        console.error("[agents] enqueue INVOICE_STATUS_CHANGED gagal", err);
+      }
 
       return invoice;
     }),

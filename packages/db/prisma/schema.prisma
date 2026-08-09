@@ -33,6 +33,7 @@ model User {
   approvals     Timesheet[] @relation("TimesheetApprover")
   verifiedCompliance ComplianceRecord[] @relation("ComplianceVerifier")
   notifications Notification[]
+  approvedAgentActions AgentAction[] @relation("AgentActionApprover")
 
   @@map("users")
 }
@@ -106,6 +107,10 @@ model Company {
   contracts   Contract[]
   invoices    Invoice[]
   auditLogs   AuditLog[]
+  agentJobs   AgentJob[]
+  agentRuns   AgentRun[]
+  agentConfigs AgentConfig[]
+  agentEmbeddings AgentEmbedding[]
 
   @@map("companies")
 }
@@ -491,4 +496,154 @@ model Notification {
 
   @@index([userId, read])
   @@map("notifications")
+}
+
+// ─── AI AGENTS: JOBS, RUNS, ACTIONS, CONFIG ──────────────────────────
+
+enum AgentType {
+  BILLING
+  COMPLIANCE
+  OPS_COPILOT
+  GENERAL
+}
+
+enum AgentTrigger {
+  TIMESHEET_APPROVED
+  INVOICE_STATUS_CHANGED
+  COMPLIANCE_UPDATED
+  CRON_DAILY
+  CRON_WEEKLY
+  USER_CHAT
+}
+
+enum AgentJobStatus {
+  PENDING
+  LOCKED
+  PROCESSED
+  FAILED
+}
+
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum AgentActionMode {
+  PROPOSE
+  AUTO
+}
+
+enum AgentActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUTO_EXECUTED
+  EXPIRED
+  FAILED
+}
+
+/// Antrian kerja agent (event & cron) berbasis DB.
+model AgentJob {
+  id          String        @id @default(cuid())
+  companyId   String
+  agentType   AgentType
+  triggerType AgentTrigger
+  status      AgentJobStatus @default(PENDING)
+  runAt       DateTime      @default(now())
+  attempts    Int           @default(0)
+  error       String?       @db.Text
+  createdAt   DateTime      @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt])
+  @@index([companyId])
+  @@map("agent_jobs")
+}
+
+/// Satu eksekusi orchestrator (ReAct loop / workflow deterministik).
+model AgentRun {
+  id          String         @id @default(cuid())
+  companyId   String
+  agentType   AgentType
+  triggerType AgentTrigger
+  intent      String?
+  status      AgentRunStatus @default(QUEUED)
+  model       String?
+  totalTokens Int            @default(0)
+  steps       Json           @default("[]")
+  error       String?        @db.Text
+  startedAt   DateTime       @default(now())
+  finishedAt  DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actions AgentAction[]
+
+  @@index([companyId, startedAt])
+  @@map("agent_runs")
+}
+
+/// Aksi yang diputuskan agent: menunggu approval (PROPOSE) atau langsung (AUTO).
+model AgentAction {
+  id             String            @id @default(cuid())
+  runId          String
+  tool           String
+  input          Json
+  output         Json?
+  mode           AgentActionMode   @default(PROPOSE)
+  status         AgentActionStatus @default(PENDING)
+  idempotencyKey String?
+  reason         String?           @db.Text
+  approvedBy     String?
+  approvedAt     DateTime?
+  error          String?           @db.Text
+  createdAt      DateTime          @default(now())
+  executedAt     DateTime?
+
+  run      AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  approver User?    @relation("AgentActionApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([runId])
+  @@unique([tool, idempotencyKey])
+  @@map("agent_actions")
+}
+
+/// Konfigurasi agent per perusahaan (diubah hanya oleh OWNER/ADMIN).
+model AgentConfig {
+  id                  String          @id @default(cuid())
+  companyId           String
+  agentType           AgentType
+  enabled             Boolean         @default(true)
+  mode                AgentActionMode @default(PROPOSE)
+  toolOverrides       Json            @default("{}")
+  autoActionThreshold Float?
+  monthlyTokenBudget  Int             @default(100000)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, agentType])
+  @@map("agent_configs")
+}
+
+model AgentEmbedding {
+  id         String   @id @default(cuid())
+  companyId  String
+  entityType String
+  entityId   String
+  content    String
+  vector     Unsupported("vector(768)")?
+  updatedAt  DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, entityType, entityId])
+  @@index([companyId])
+  @@index([entityType, entityId])
+  @@map("agent_embeddings")
 }

@@ -17,6 +17,10 @@ import {
   Zap,
   Menu,
   LogOut,
+  Bot,
+  ListChecks,
+  History,
+  SlidersHorizontal,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { NotificationCenter } from "./notification-center";
@@ -34,6 +38,21 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ] as const;
 
+const agentNavItems = [
+  { href: "/dashboard/agents/copilot", label: "Ops Copilot", icon: Bot },
+  {
+    href: "/dashboard/agents/queue",
+    label: "Approval Queue",
+    icon: ListChecks,
+  },
+  { href: "/dashboard/agents/activity", label: "Activity Log", icon: History },
+  {
+    href: "/dashboard/agents/config",
+    label: "Config",
+    icon: SlidersHorizontal,
+  },
+] as const;
+
 const TITLES: Record<string, string> = {
   "/dashboard": "Overview",
   "/dashboard/freelancers": "Freelancers",
@@ -45,6 +64,10 @@ const TITLES: Record<string, string> = {
   "/dashboard/compliance": "Compliance",
   "/dashboard/reports": "Reports",
   "/dashboard/settings": "Settings",
+  "/dashboard/agents/copilot": "Ops Copilot",
+  "/dashboard/agents/queue": "Approval Queue",
+  "/dashboard/agents/activity": "Activity Log",
+  "/dashboard/agents/config": "Agent Config",
 };
 
 function isActive(pathname: string, href: string): boolean {
@@ -82,6 +105,37 @@ function SidebarContent({
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
+          const active = isActive(pathname, item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={clsx(
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                active
+                  ? "bg-primary-500/10 text-sidebar-active ring-1 ring-inset ring-primary-400/20"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+              )}
+            >
+              <Icon
+                className={clsx(
+                  "h-[18px] w-[18px] transition-colors",
+                  active
+                    ? "text-primary-400"
+                    : "text-slate-500 group-hover:text-slate-300",
+                )}
+              />
+              {item.label}
+            </Link>
+          );
+        })}
+
+        <p className="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          AI Agents
+        </p>
+        {agentNavItems.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
           return (

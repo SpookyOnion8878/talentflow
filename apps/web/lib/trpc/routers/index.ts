@@ -10,6 +10,7 @@ import { notificationRouter } from "./notification";
 import { dashboardRouter } from "./dashboard";
 import { membershipRouter } from "./membership";
 import { companyRouter } from "./company";
+import { agentsRouter } from "./agents";
 
 export const appRouter = router({
   freelancer: freelancerRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   membership: membershipRouter,
   company: companyRouter,
+  agents: agentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

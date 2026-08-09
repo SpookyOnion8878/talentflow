@@ -14,6 +14,10 @@ export type {
   ComplianceRecord,
   AuditLog,
   Notification,
+  AgentJob,
+  AgentRun,
+  AgentAction,
+  AgentConfig,
 } from "@prisma/client";
 
 export {
@@ -30,6 +34,12 @@ export {
   PaymentStatus,
   ComplianceType,
   ComplianceStatus,
+  AgentType,
+  AgentTrigger,
+  AgentJobStatus,
+  AgentRunStatus,
+  AgentActionMode,
+  AgentActionStatus,
 } from "@prisma/client";
 
 import { PrismaClient } from "@prisma/client";

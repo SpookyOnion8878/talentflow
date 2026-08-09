@@ -13,7 +13,13 @@
     "RESEND_API_KEY",
     "EMAIL_FROM",
     "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET"
+    "STRIPE_WEBHOOK_SECRET",
+    "MODEL_PROVIDER",
+    "GEMINI_API_KEY",
+    "MODEL_FAST",
+    "MODEL_DEEP",
+    "OLLAMA_BASE_URL",
+    "CRON_SECRET"
   ],
   "tasks": {
     "build": {

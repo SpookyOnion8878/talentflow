@@ -10,6 +10,16 @@ import {
   Preview,
 } from "@react-email/components";
 
+export { sendEmail } from "./send";
+export type { SendEmailParams } from "./send";
+export { renderAgentEmail } from "./render";
+export type { EmailTemplateKind } from "./render";
+export {
+  InvoiceReminderEmail,
+  ComplianceWarningEmail,
+  WeeklySummaryEmail,
+} from "./templates/agent";
+
 interface EmailProps {
   name: string;
   actionUrl: string;

@@ -6,6 +6,12 @@ const ownerGuard = requireRole("OWNER");
 const teamGuard = requireRole("OWNER", "ADMIN");
 
 export const membershipRouter = router({
+  /** Role member saat ini (untuk gating UI client-side). */
+  myRole: protectedProcedure.query(({ ctx }) => ({
+    role: ctx.membership.role,
+    companyId: ctx.companyId,
+  })),
+
   list: protectedProcedure.use(teamGuard).query(async ({ ctx }) => {
     return ctx.prisma.membership.findMany({
       where: { companyId: ctx.companyId },

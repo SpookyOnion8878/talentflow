@@ -7,7 +7,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
-  transpilePackages: ["@repo/ui", "@repo/validators", "@repo/utils", "@repo/db", "@repo/email"],
+  transpilePackages: ["@repo/ui", "@repo/validators", "@repo/utils", "@repo/db"],
+  serverExternalPackages: ["@repo/email"],
   async headers() {
     const headers = [{ source: "/:path*", headers: securityHeaders }];
     if (process.env.NODE_ENV === "production") {

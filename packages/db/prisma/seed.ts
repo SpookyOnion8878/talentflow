@@ -1063,6 +1063,39 @@ async function main() {
     skipDuplicates: true,
   });
 
+  // ─── Agent Configs (AI Agents — default PROPOSE) ───
+  await prisma.agentConfig.createMany({
+    data: [
+      {
+        companyId: company.id,
+        agentType: "BILLING",
+        enabled: true,
+        mode: "PROPOSE",
+        autoActionThreshold: 10000,
+        monthlyTokenBudget: 100000,
+      },
+      {
+        companyId: company.id,
+        agentType: "COMPLIANCE",
+        enabled: true,
+        mode: "PROPOSE",
+        toolOverrides: {
+          sendComplianceReminder: "AUTO",
+          markComplianceExpired: "AUTO",
+          suspendFreelancer: "AUTO",
+        },
+        monthlyTokenBudget: 150000,
+      },
+      {
+        companyId: company.id,
+        agentType: "OPS_COPILOT",
+        enabled: true,
+        mode: "PROPOSE",
+        monthlyTokenBudget: 100000,
+      },
+    ],
+  });
+
   console.log("Seed completed.");
   console.log("  Admin login:    admin@talentflow.dev  / password123  (OWNER)");
   console.log(

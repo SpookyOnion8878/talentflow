@@ -4,6 +4,7 @@ import { complianceSchema } from "@repo/validators";
 import { Prisma } from "@repo/db";
 import type { ComplianceStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
+import { enqueueAgentJob } from "@repo/agents";
 
 const verifierGuard = requireRole("OWNER", "ADMIN", "MANAGER");
 
@@ -90,6 +91,16 @@ export const complianceRouter = router({
         entityId: record.id,
         metadata: { type: record.type, title: record.title },
       });
+
+      try {
+        await enqueueAgentJob(ctx.prisma, {
+          companyId: ctx.companyId,
+          agentType: "COMPLIANCE",
+          triggerType: "COMPLIANCE_UPDATED",
+        });
+      } catch (err) {
+        console.error("[agents] enqueue COMPLIANCE_UPDATED gagal", err);
+      }
 
       return record;
     }),

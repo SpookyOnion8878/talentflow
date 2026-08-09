@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -64,12 +64,22 @@ export default function CompliancePage() {
     (data?.summary.expiringSoon ?? 0) +
     (data?.summary.pending ?? 0);
 
+  const { data: agentStatus } = trpc.agents.status.useQuery();
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Compliance"
         description="Track documents, certifications, and regulatory compliance"
       />
+
+      {agentStatus?.compliance.enabled && (
+        <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Compliance Agent active ({agentStatus.compliance.mode}) — automated
+          monitoring 30/7/0 days
+        </div>
+      )}
 
       {/* Summary */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

@@ -13,6 +13,7 @@
 - [Overview](#overview)
 - [Business Value](#business-value)
 - [Features](#features)
+- [AI Agents (AgentOps)](#ai-agents-agentops)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Entity Relationship Diagram (ERD)](#entity-relationship-diagram-erd)
@@ -88,6 +89,20 @@ A unified platform with:
 - **Export Reports** — PDF and CSV export for financial and compliance reports
 - **Multi-currency** — Auto-conversion with exchange rate integration
 
+### AI Agents (AgentOps)
+
+An orchestration engine + AI copilot for business operations, built on the existing tRPC/Prisma/RBAC stack:
+
+- **Agent engine** (`packages/agents`) — orchestrated runs, tool registry, guardrails, approval queue, audit logging
+- **Billing Agent** — probes timesheets, detects unapproved entries, proposes invoice pre-checks
+- **Compliance Agent** — scans document expiry, flags near-expiry and expired compliance records
+- **AI Ops Copilot** — router + Gemini/Ollama providers, auto/manual approval modes, `general_question` RAG
+- **RAG pipeline** — company data ingested into **pgvector** embeddings (`text-embedding-004` / `nomic-embed-text` / deterministic mock), top-k retrieval for chat
+- **Hardening** — unique `(tool, idempotencyKey)` constraint, duplicate-safe budget check pre-check, cost dashboard with token budget & 80% alert
+- **UI** — `/dashboard/agents/*` pages (dashboard, activity, config, copilot, queue) with English UI
+
+Docs: [`docs/agents/`](docs/agents/00-README.md) (PRD, architecture, ERD, roadmap).
+
 ---
 
 ## Tech Stack
@@ -110,6 +125,7 @@ A unified platform with:
 | **Documentation**  | Next.js (custom docs)             | Free           |
 | **Testing**        | Vitest + Playwright               | Free           |
 | **Linting**        | ESLint + Prettier + Husky         | Free           |
+| **AI Agents**      | Gemini / Ollama / mock + pgvector | Free ($0 tier) |
 
 ---
 
@@ -374,7 +390,20 @@ Additional Entities:
 
 - **Node.js** >= 18
 - **pnpm** >= 9
-- **PostgreSQL** (local or [Supabase free tier](https://supabase.com))
+- **PostgreSQL with pgvector extension** (`pgvector/pgvector:pg16` image) — required for the AI Agents RAG pipeline
+
+### Quick DB with pgvector (Docker)
+
+```bash
+docker run -d --name tf-pg \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5432:5432 \
+  -v tf_pg_data:/var/lib/postgresql/data \
+  pgvector/pgvector:pg16
+
+# One-time setup
+docker exec -i tf-pg psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS vector"
+```
 
 ### 1. Clone & Install
 
@@ -400,11 +429,28 @@ pnpm db:generate
 # Push schema to database
 pnpm db:push
 
+# Push with data-loss override (needed when schema changes drop/alter columns)
+pnpm db:push --accept-data-loss
+
 # Seed with demo data
 pnpm db:seed
 
 # Open Prisma Studio (optional)
 pnpm db:studio
+```
+
+### 4. AI Agents Setup
+
+```bash
+cp .env.example .env.local
+# Fill in: MODEL_PROVIDER (gemini | ollama | mock), GEMINI_API_KEY, CRON_SECRET
+# MODEL_FAST / MODEL_DEEP / OLLAMA_BASE_URL are optional defaults
+
+# End-to-end smoke: engine + DB + RAG against seeded data
+pnpm --filter @repo/agents smoke
+
+# Optional: re-ingest company embeddings via UI
+# Dashboard → Agent Config → "Reindex embeddings"
 ```
 
 ### 4. Start Development
@@ -418,10 +464,22 @@ pnpm --filter @repo/web dev     # Web app on :3000
 pnpm --filter @repo/docs dev    # Docs on :3001
 ```
 
-### 5. Access the App
+### 5. Start Development
+
+```bash
+# Start all apps and packages
+pnpm dev
+
+# Or start specific apps
+pnpm --filter @repo/web dev     # Web app on :3000
+pnpm --filter @repo/docs dev    # Docs on :3001
+```
+
+### 6. Access the App
 
 - **Web App**: [http://localhost:3000](http://localhost:3000)
-- **Documentation**: [http://localhost:3001](http://localhost:3001)
+- **Agent Dashboard**: [http://localhost:3000/dashboard/agents](http://localhost:3000/dashboard/agents)
+- **Cron endpoint** (daily agent runs; unauthorized by default): `GET /api/cron/agents` with `Authorization: Bearer $CRON_SECRET`
 - **Prisma Studio**: [http://localhost:5555](http://localhost:5555)
 
 ---
@@ -430,17 +488,18 @@ pnpm --filter @repo/docs dev    # Docs on :3001
 
 ### Key Directories
 
-| Path                        | Description                            |
-| --------------------------- | -------------------------------------- |
-| `apps/web/app/(auth)/`      | Authentication pages (login, register) |
-| `apps/web/app/(dashboard)/` | Protected dashboard pages              |
-| `apps/web/lib/trpc/`        | tRPC server setup and routers          |
-| `apps/web/app/api/trpc/`    | tRPC API route handler                 |
-| `packages/db/prisma/`       | Database schema and migrations         |
-| `packages/validators/src/`  | Shared Zod validation schemas          |
-| `packages/ui/src/`          | Shared React UI components             |
-| `packages/utils/src/`       | Shared utility functions               |
-| `packages/email/src/`       | React Email templates                  |
+| Path                        | Description                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| `apps/web/app/(auth)/`      | Authentication pages (login, register)                      |
+| `apps/web/app/(dashboard)/` | Protected dashboard pages                                   |
+| `apps/web/lib/trpc/`        | tRPC server setup and routers                               |
+| `apps/web/app/api/trpc/`    | tRPC API route handler                                      |
+| `packages/db/prisma/`       | Database schema and migrations                              |
+| `packages/validators/src/`  | Shared Zod validation schemas                               |
+| `packages/ui/src/`          | Shared React UI components                                  |
+| `packages/utils/src/`       | Shared utility functions                                    |
+| `packages/email/src/`       | React Email templates                                       |
+| `packages/agents/`          | AgentOps engine: engine, jobs, tools, RAG, providers, tests |
 
 ---
 
@@ -491,6 +550,13 @@ GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 STRIPE_SECRET_KEY=sk_live_...
 RESEND_API_KEY=re_...
+# AI Agents (optional — fall back to mock provider when unset)
+MODEL_PROVIDER=gemini
+GEMINI_API_KEY=AIza...
+MODEL_FAST=gemini-1.5-flash
+MODEL_DEEP=gemini-1.5-pro
+OLLAMA_BASE_URL=http://localhost:11434
+CRON_SECRET=<generated-secret>
 ```
 
 ### CI/CD Pipeline
@@ -569,6 +635,16 @@ test: add timesheet approval tests
 - [ ] Documentation site
 - [ ] Landing page optimization
 - [ ] Vercel production deployment
+
+### AgentOps (AI Agents) — Done
+
+- [x] Agent engine: orchestration, tool registry, guardrails, approval queue, audit logging
+- [x] Billing & Compliance agents + AI Ops Copilot (Gemini/Ollama/mock)
+- [x] RAG pipeline with pgvector embeddings + chat retrieval
+- [x] Idempotency hardening, stress tests, cost dashboard with budget alerts
+- [x] Dashboard UI + cron endpoint + 30 unit tests + end-to-end smoke script
+
+Blueprint & roadmap: [`docs/agents/`](docs/agents/00-README.md).
 
 ---
 

@@ -4,6 +4,7 @@ import { timesheetSchema, paginationSchema } from "@repo/validators";
 import { Prisma } from "@repo/db";
 import type { TimesheetStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
+import { enqueueAgentJob } from "@repo/agents";
 
 const managerGuard = requireRole("OWNER", "ADMIN", "MANAGER", "FINANCE");
 
@@ -187,6 +188,17 @@ export const timesheetRouter = router({
         entityId: input.id,
         metadata: { hours: timesheet.hours },
       });
+
+      // Trigger AI Agent: kali approved akan di-queue untuk draft invoice.
+      try {
+        await enqueueAgentJob(ctx.prisma, {
+          companyId: ctx.companyId,
+          agentType: "BILLING",
+          triggerType: "TIMESHEET_APPROVED",
+        });
+      } catch (err) {
+        console.error("[agents] enqueue TIMESHEET_APPROVED gagal", err);
+      }
 
       return updated;
     }),
