@@ -537,27 +537,37 @@ All API endpoints are defined as tRPC routers with full type safety.
 
 1. Push to GitHub
 2. Connect repo to [Vercel](https://vercel.com)
-3. Add environment variables in Vercel dashboard
+3. Add environment variables in Vercel dashboard (see below)
 4. Deploy — Vercel auto-detects Next.js apps
+
+> **Production database**: use a managed PostgreSQL with the **pgvector** extension —
+> [Neon](https://neon.tech) (recommended, pgvector built-in) or [Supabase](https://supabase.com).
+> `pnpm db:push --accept-data-loss` once against the prod DB, seed if desired, and reindex
+> agent embeddings from the Agent Config page after deploy.
+> Vercel Cron (see `vercel.json`) calls `/api/cron/agents` daily/weekly with `CRON_SECRET`.
 
 ### Environment Variables (Production)
 
 ```
-DATABASE_URL=postgresql://...
-NEXTAUTH_URL=https://your-domain.vercel.app
+DATABASE_URL=postgresql://...   # Neon/Supabase (pgvector) — NOT localhost
+NEXTAUTH_URL=https://talentflow.vercel.app
 NEXTAUTH_SECRET=<generated-secret>
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 STRIPE_SECRET_KEY=sk_live_...
 RESEND_API_KEY=re_...
-# AI Agents (optional — fall back to mock provider when unset)
+NEXT_PUBLIC_APP_URL=https://talentflow.vercel.app
+# AI Agents — production (fall back to mock provider when unset)
 MODEL_PROVIDER=gemini
-GEMINI_API_KEY=AIza...
-MODEL_FAST=gemini-1.5-flash
-MODEL_DEEP=gemini-1.5-pro
+GEMINI_API_KEY=<Gemini API key — format baru "AQ.Ab..." (AI Studio)>
+MODEL_FAST=gemini-2.5-flash
+MODEL_DEEP=gemini-2.5-flash
 OLLAMA_BASE_URL=http://localhost:11434
 CRON_SECRET=<generated-secret>
 ```
+
+Set the same secrets in **GitHub Actions** (`.github/workflows/ci.yml`): `DATABASE_URL`,
+`NEXTAUTH_SECRET`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_WEB_PROJECT_ID`.
 
 ### CI/CD Pipeline
 
