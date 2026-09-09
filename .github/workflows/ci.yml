@@ -22,6 +22,9 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint
+      # @repo/email ships types from dist; build it (and any deps) before
+      # type-checking packages that import it.
+      - run: pnpm turbo run build --filter=@repo/email
       - run: pnpm turbo run check-types
 
   test:
