@@ -225,7 +225,7 @@ describe("invoice router (caller-level)", () => {
     const { state } = makeFakePrisma({ companyId: "company-OTHER" });
     h.prisma = makeFakePrisma().prisma; // membership stays company-1
     // point the findFirst mock at the OTHER-company invoice state
-    h.prisma.invoice.findFirst.mockImplementation(async ({ where }) =>
+    h.prisma?.invoice.findFirst?.mockImplementation(async ({ where }) =>
       where.id === "inv-1" && where.companyId === "company-1"
         ? null
         : {
