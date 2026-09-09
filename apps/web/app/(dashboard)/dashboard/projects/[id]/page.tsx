@@ -98,6 +98,15 @@ export default async function ProjectDetailPage({
           <p className="mt-1 text-xs text-slate-500">
             {budget.percentUsed}% of budget used
           </p>
+          {budget.excludedCurrencyEntries > 0 && (
+            <p className="mt-1 text-xs text-amber-600">
+              {`${budget.excludedCurrencyEntries} ${
+                budget.excludedCurrencyEntries === 1
+                  ? "timesheet entry was"
+                  : "timesheet entries were"
+              } excluded because the contract currency differs from the project currency.`}
+            </p>
+          )}
         </div>
       </div>
 

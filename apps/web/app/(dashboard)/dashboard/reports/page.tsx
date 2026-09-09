@@ -30,23 +30,9 @@ export default async function ReportsPage() {
         )
       : 100;
 
-  const totalBudget = stats.budgetOverview.reduce(
-    (sum, p) => sum + p.budget,
-    0,
+  const financialEntries = Object.entries(stats.stats.financialByCurrency).sort(
+    ([left], [right]) => left.localeCompare(right),
   );
-  const spendPercent =
-    totalBudget > 0
-      ? Math.min(
-          100,
-          Math.round((stats.stats.monthlySpend / totalBudget) * 100),
-        )
-      : 0;
-  const receivableTotal = stats.stats.totalPaid + stats.stats.totalOutstanding;
-  const paidPercent =
-    receivableTotal > 0
-      ? Math.round((stats.stats.totalPaid / receivableTotal) * 100)
-      : 0;
-  const outstandingPercent = 100 - paidPercent;
 
   return (
     <div className="space-y-6">
@@ -62,50 +48,54 @@ export default async function ReportsPage() {
             Spending Overview
           </h3>
           <div className="mt-4 space-y-4">
-            <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">
-                  Monthly spend (approved hours)
-                </span>
-                <span className="font-medium">
-                  {stats.stats.monthlySpendLabel}
-                </span>
-              </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-200">
+            {financialEntries.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No financial activity is available.
+              </p>
+            )}
+            {financialEntries.map(([currency, summary]) => {
+              const receivableTotal = summary.paid + summary.outstanding;
+              const paidPercent =
+                receivableTotal > 0
+                  ? Math.round((summary.paid / receivableTotal) * 100)
+                  : 0;
+              return (
                 <div
-                  className="h-2 rounded-full bg-primary-500"
-                  style={{ width: `${spendPercent}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Total paid</span>
-                <span className="font-medium">
-                  {stats.stats.totalPaidLabel}
-                </span>
-              </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-200">
-                <div
-                  className="h-2 rounded-full bg-green-500"
-                  style={{ width: `${paidPercent}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Outstanding</span>
-                <span className="font-medium text-yellow-600">
-                  {stats.stats.totalOutstandingLabel}
-                </span>
-              </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-200">
-                <div
-                  className="h-2 rounded-full bg-yellow-500"
-                  style={{ width: `${outstandingPercent}%` }}
-                />
-              </div>
-            </div>
+                  key={currency}
+                  className="rounded-lg border border-slate-100 p-3"
+                >
+                  <p className="text-xs font-semibold uppercase text-slate-500">
+                    {currency}
+                  </p>
+                  <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
+                    <div>
+                      <dt className="text-slate-500">Monthly spend</dt>
+                      <dd className="font-medium">
+                        {formatCurrency(summary.monthlySpend, currency)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Paid</dt>
+                      <dd className="font-medium text-green-600">
+                        {formatCurrency(summary.paid, currency)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Outstanding</dt>
+                      <dd className="font-medium text-yellow-600">
+                        {formatCurrency(summary.outstanding, currency)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-yellow-200">
+                    <div
+                      className="h-full bg-green-500"
+                      style={{ width: `${paidPercent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -123,8 +113,8 @@ export default async function ReportsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">{p.name}</span>
                   <span className="font-medium">
-                    {formatCurrency(p.spent)} / {formatCurrency(p.budget)} (
-                    {p.percentUsed}%)
+                    {formatCurrency(p.spent, p.currency)} /{" "}
+                    {formatCurrency(p.budget, p.currency)} ({p.percentUsed}%)
                   </span>
                 </div>
                 <div className="mt-1 h-2 rounded-full bg-slate-200">
@@ -133,6 +123,15 @@ export default async function ReportsPage() {
                     style={{ width: `${p.percentUsed}%` }}
                   />
                 </div>
+                {p.excludedCurrencyEntries > 0 && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    {`${p.excludedCurrencyEntries} cross-currency ${
+                      p.excludedCurrencyEntries === 1
+                        ? "timesheet entry was"
+                        : "timesheet entries were"
+                    } excluded.`}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -152,7 +151,7 @@ export default async function ReportsPage() {
             </div>
             <div className="rounded-lg bg-yellow-50 p-4">
               <p className="text-2xl font-bold text-yellow-700">
-                {invoices.summary.totalDraft}
+                {invoices.summary.statusCounts.DRAFT ?? 0}
               </p>
               <p className="text-xs text-yellow-600">Draft</p>
             </div>

@@ -44,6 +44,9 @@ export default function InvoicesPage() {
   };
 
   const summary = data?.summary;
+  const currencySummaries = Object.entries(summary?.byCurrency ?? {}).sort(
+    ([left], [right]) => left.localeCompare(right),
+  );
 
   return (
     <div className="space-y-6">
@@ -58,26 +61,36 @@ export default function InvoicesPage() {
 
       {/* Summary */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Outstanding"
-          value={summary ? formatCurrency(summary.totalOutstanding) : "—"}
-          color="text-yellow-600 bg-yellow-50"
-        />
-        <StatCard
-          label="Total Paid"
-          value={summary ? formatCurrency(summary.totalPaid) : "—"}
-          color="text-green-600 bg-green-50"
-        />
-        <StatCard
-          label="Overdue"
-          value={summary ? formatCurrency(summary.totalOverdue) : "—"}
-          color="text-red-600 bg-red-50"
-        />
-        <StatCard
-          label="Draft"
-          value={summary ? formatCurrency(summary.totalDraft) : "—"}
-          color="text-slate-600 bg-slate-50"
-        />
+        {currencySummaries.length === 0 ? (
+          <StatCard label="Invoice totals" value="—" />
+        ) : (
+          currencySummaries.flatMap(([currency, values]) => [
+            <StatCard
+              key={`${currency}-outstanding`}
+              label={`Outstanding (${currency})`}
+              value={formatCurrency(values.outstanding, currency)}
+              color="text-yellow-600 bg-yellow-50"
+            />,
+            <StatCard
+              key={`${currency}-paid`}
+              label={`Total Paid (${currency})`}
+              value={formatCurrency(values.paid, currency)}
+              color="text-green-600 bg-green-50"
+            />,
+            <StatCard
+              key={`${currency}-overdue`}
+              label={`Overdue (${currency})`}
+              value={formatCurrency(values.overdue, currency)}
+              color="text-red-600 bg-red-50"
+            />,
+            <StatCard
+              key={`${currency}-draft`}
+              label={`Draft (${currency})`}
+              value={formatCurrency(values.draft, currency)}
+              color="text-slate-600 bg-slate-50"
+            />,
+          ])
+        )}
       </div>
 
       <div className="flex gap-3">

@@ -8,7 +8,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req.headers);
-    if (!checkRateLimit(`register:${ip}`, 10, 60 * 60 * 1000)) {
+    if (!checkRateLimit("register:global", 100, 60 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Too many registration attempts. Please try again later." },
         { status: 429 },
@@ -32,6 +32,21 @@ export async function POST(req: Request) {
     }
 
     const { name, email, password, companyName } = parsed.data;
+
+    if (
+      !checkRateLimit(
+        `register:email:${email.trim().toLowerCase()}`,
+        5,
+        60 * 60 * 1000,
+      ) ||
+      (ip !== "unknown" &&
+        !checkRateLimit(`register:ip:${ip}`, 10, 60 * 60 * 1000))
+    ) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429 },
+      );
+    }
 
     const baseSlug = slugify(companyName) || "company";
     const slug = `${baseSlug}-${Date.now().toString(36)}`;

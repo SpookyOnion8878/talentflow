@@ -4,12 +4,13 @@ import { useRef, useState, useEffect } from "react";
 import { Bot, Send, Sparkles, ArrowRight } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { PageHeader } from "@/components/page-header";
-import type { CopilotSuggestion } from "@repo/agents";
+import type { StoredCopilotSuggestion } from "@repo/agents";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  suggestions?: CopilotSuggestion[];
+  runId?: string;
+  suggestions?: StoredCopilotSuggestion[];
 }
 
 const SUGGESTED = [
@@ -58,6 +59,7 @@ export default function CopilotPage() {
         {
           role: "assistant",
           content: res.answer,
+          runId: res.runId,
           suggestions: res.suggestions,
         },
       ]);
@@ -132,9 +134,10 @@ export default function CopilotPage() {
                         type="button"
                         disabled={applyMutation.isPending}
                         onClick={() =>
+                          m.runId &&
                           applyMutation.mutate({
-                            tool: s.tool,
-                            params: s.params,
+                            runId: m.runId,
+                            suggestionId: s.id,
                           })
                         }
                         className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-40"

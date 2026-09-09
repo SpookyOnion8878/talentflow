@@ -91,7 +91,6 @@ export default function CreateInvoicePage() {
         description: item.description,
         quantity: item.quantity,
         rate: item.rate,
-        amount: item.quantity * item.rate,
       })),
     });
   };

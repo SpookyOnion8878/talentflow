@@ -37,6 +37,22 @@ function ActivityIcon({ type }: { type: string }) {
   );
 }
 
+type FinancialMetric = "monthlySpend" | "outstanding" | "paid";
+
+function formatFinancialBreakdown(
+  summaries: Record<
+    string,
+    { monthlySpend: number; outstanding: number; paid: number }
+  >,
+  metric: FinancialMetric,
+): string {
+  const values = Object.entries(summaries)
+    .filter(([, summary]) => summary[metric] !== 0)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([currency, summary]) => formatCurrency(summary[metric], currency));
+  return values.length > 0 ? values.join(" · ") : "—";
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
@@ -45,6 +61,18 @@ export default async function DashboardPage() {
     api.dashboard.getStats(),
     api.dashboard.getRecentActivity(),
   ]);
+  const monthlySpendLabel = formatFinancialBreakdown(
+    stats.stats.financialByCurrency,
+    "monthlySpend",
+  );
+  const outstandingLabel = formatFinancialBreakdown(
+    stats.stats.financialByCurrency,
+    "outstanding",
+  );
+  const paidLabel = formatFinancialBreakdown(
+    stats.stats.financialByCurrency,
+    "paid",
+  );
 
   return (
     <div className="space-y-6">
@@ -69,7 +97,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Monthly Spend"
-          value={stats.stats.monthlySpendLabel}
+          value={monthlySpendLabel}
           color="text-violet-600 bg-violet-50"
         />
       </div>
@@ -118,6 +146,15 @@ export default async function DashboardPage() {
                     style={{ width: `${p.percentUsed}%` }}
                   />
                 </div>
+                {p.excludedCurrencyEntries > 0 && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    {`${p.excludedCurrencyEntries} ${
+                      p.excludedCurrencyEntries === 1
+                        ? "timesheet entry was"
+                        : "timesheet entries were"
+                    } excluded because the contract currency differs from the project currency.`}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -131,13 +168,13 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm text-slate-500">Outstanding</p>
                 <p className="mt-0.5 text-xl font-bold text-slate-900">
-                  {stats.stats.totalOutstandingLabel}
+                  {outstandingLabel}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-slate-500">Total Paid</p>
                 <p className="mt-0.5 text-xl font-bold text-emerald-600">
-                  {stats.stats.totalPaidLabel}
+                  {paidLabel}
                 </p>
               </div>
             </div>

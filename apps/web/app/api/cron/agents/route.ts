@@ -5,25 +5,47 @@ import {
   enqueueAgentJob,
   processAvailableJobs,
   expireStaleActions,
+  recoverStaleClaimedActions,
 } from "@repo/agents";
+import { authorizeCronRequest } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Cron internal AgentOps (dipanggil pg_cron / Vercel Cron — lihat vercel.json).
- * 1) Kadaluarkan aksi PROPOSE yang sudah stale (>7 hari).
- * 2) Buat job CRON untuk perusahaan yang mengaktifkan agent.
- * 3) Proses job PENDING yang siap (BILLING mingguan, COMPLIANCE harian).
+ * Runs the internal AgentOps schedule for pg_cron or Vercel Cron.
+ * The endpoint expires stale proposals, enqueues enabled company jobs, and
+ * processes the pending billing or compliance jobs for the requested cadence.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const authorization = authorizeCronRequest(
+    request.headers.get("authorization"),
+    secret,
+  );
+
+  if (authorization === "misconfigured") {
+    console.error(
+      "Agent cron is disabled because CRON_SECRET is missing or too short.",
+    );
+    return NextResponse.json(
+      { error: "service unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  if (authorization === "unauthorized") {
+    return NextResponse.json(
+      { error: "unauthorized" },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   const isWeekly = request.nextUrl.searchParams.get("kind") === "weekly";
 
-  const expired = await expireStaleActions(prisma);
+  const [expired, recoveredClaims] = await Promise.all([
+    expireStaleActions(prisma),
+    recoverStaleClaimedActions(prisma),
+  ]);
 
   const configs = await prisma.agentConfig.findMany({
     where: { enabled: true },
@@ -47,10 +69,13 @@ export async function GET(request: NextRequest) {
 
   const processed = await processAvailableJobs(prisma, { limit: 10 });
 
-  return NextResponse.json({
-    enqueued,
-    expiredActions: expired,
-    processed: processed.processed,
-    results: processed.results,
-  });
+  return NextResponse.json(
+    {
+      enqueued,
+      expiredActions: expired,
+      recoveredClaims,
+      processed: processed.processed,
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

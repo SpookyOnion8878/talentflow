@@ -15,7 +15,9 @@ export default function AgentActivityPage() {
   const { data, isLoading } = trpc.agents.activity.useQuery({
     page,
     limit,
-    status,
+    status: status
+      ? (status as "SUCCEEDED" | "FAILED" | "NEEDS_REVIEW")
+      : undefined,
   });
 
   const runs = data?.data ?? [];
