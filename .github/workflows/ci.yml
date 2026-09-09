@@ -57,19 +57,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-
-  deploy:
-    name: Deploy to Vercel
+  deploy-hint:
+    name: Deployment
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          vercel-args: "--prod"
-          working-directory: ./
+      - name: Note deployment path
+        run: |
+          echo "Deployment happens via the Vercel GitHub integration on push to main."
+          echo "To deploy from CI instead, add VERCEL_TOKEN / VERCEL_ORG_ID /"
+          echo "VERCEL_WEB_PROJECT_ID secrets and re-add a vercel-action step."

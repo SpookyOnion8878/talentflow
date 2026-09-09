@@ -1,4 +1,4 @@
-name: Preview Deployment
+name: Preview Verification
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ env:
 
 jobs:
   preview:
-    name: Preview Deploy
+    name: PR Verification
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,20 +19,12 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Deploy Preview
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+      - run: pnpm turbo run lint
+      - run: pnpm turbo run build --filter=@repo/email
+      - run: pnpm turbo run check-types
+      - run: pnpm turbo run test
+      - name: Preview deploy note
+        run: |
+          echo "Previews deploy automatically via the Vercel GitHub integration for every PR."
+          echo "To deploy previews from CI instead, add VERCEL_TOKEN / VERCEL_ORG_ID /"
+          echo "VERCEL_WEB_PROJECT_ID secrets and re-add a vercel-action step."
