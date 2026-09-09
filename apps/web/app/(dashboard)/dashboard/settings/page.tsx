@@ -96,6 +96,8 @@ export default function SettingsPage() {
         email: inviteEmail,
         role: inviteRole,
       });
+      toast(`${inviteEmail} is now a team member.`, "success");
+      setInviteEmail("");
     } catch (err) {
       setInviteError(
         err instanceof Error ? err.message : "Failed to invite member",
@@ -204,43 +206,56 @@ export default function SettingsPage() {
 
           <form
             onSubmit={handleInvite}
-            className="mt-4 flex items-end gap-3 rounded-lg bg-slate-50 p-4"
+            className="mt-4 space-y-3 rounded-lg bg-slate-50 p-4"
           >
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700">
-                Invite by email
-              </label>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="teammate@company.com"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Role
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            <p className="text-xs text-slate-500">
+              The person must already have a TalentFlow account (they can{" "}
+              <a
+                href="/register"
+                className="font-medium text-primary-600 hover:underline"
               >
-                <option value="ADMIN">Admin</option>
-                <option value="MANAGER">Manager</option>
-                <option value="FINANCE">Finance</option>
-                <option value="VIEWER">Viewer</option>
-              </select>
+                register free
+              </a>
+              ) — then invite them here with the exact email they registered.
+              Email invitations for people without an account are planned.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700">
+                  Invite by email
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="teammate@company.com"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">
+                  Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                >
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="FINANCE">Finance</option>
+                  <option value="VIEWER">Viewer</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={inviteMutation.isPending}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              >
+                {inviteMutation.isPending ? "Inviting..." : "+ Invite"}
+              </button>
             </div>
-            <button
-              type="submit"
-              disabled={inviteMutation.isPending}
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-            >
-              {inviteMutation.isPending ? "Inviting..." : "+ Invite"}
-            </button>
           </form>
           {inviteError && (
             <p className="mt-2 text-sm text-red-600">{inviteError}</p>
