@@ -26,7 +26,14 @@ export function checkRateLimit(
   return bucket.count <= limit;
 }
 
+/**
+ * Client IP for rate limiting. X-Forwarded-For is client-controlled; only
+ * honor it when TRUSTED_PROXY=true (i.e. a reverse proxy sanitizes the
+ * header). Otherwise every caller shares the "unknown" bucket — consistent
+ * with lib/auth.ts.
+ */
 export function getClientIp(headers: Headers): string {
+  if (process.env.TRUSTED_PROXY !== "true") return "unknown";
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]!.trim();
   return headers.get("x-real-ip") ?? "unknown";
