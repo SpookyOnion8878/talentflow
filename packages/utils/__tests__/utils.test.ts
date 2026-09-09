@@ -6,8 +6,6 @@ import {
   truncate,
   generateInvoiceNumber,
   generateContractNumber,
-  calculateInvoiceTotal,
-  calculateBudgetBurnRate,
   getStatusColor,
   getDaysBetween,
   isOverdue,
@@ -69,42 +67,6 @@ describe("generateContractNumber", () => {
   it("generates with CTR prefix", () => {
     const num = generateContractNumber();
     expect(num).toMatch(/^CTR-/);
-  });
-});
-
-describe("calculateInvoiceTotal", () => {
-  it("calculates subtotal and tax correctly", () => {
-    const items = [
-      { quantity: 10, rate: 100 },
-      { quantity: 5, rate: 50 },
-    ];
-    const result = calculateInvoiceTotal(items);
-    expect(result.subtotal).toBe(1250);
-    expect(result.tax).toBeCloseTo(137.5);
-    expect(result.total).toBeCloseTo(1387.5);
-  });
-
-  it("handles empty items", () => {
-    const result = calculateInvoiceTotal([]);
-    expect(result.subtotal).toBe(0);
-    expect(result.total).toBe(0);
-  });
-});
-
-describe("calculateBudgetBurnRate", () => {
-  it("calculates burn rate correctly", () => {
-    const result = calculateBudgetBurnRate(50000, 25000, 100, 50);
-    expect(result.dailyRate).toBe(500);
-    expect(result.remainingDays).toBe(50);
-    expect(result.projectedTotal).toBe(50000);
-    expect(result.onTrack).toBe(true);
-  });
-
-  it("detects over-budget projects", () => {
-    const result = calculateBudgetBurnRate(10000, 8000, 100, 50);
-    expect(result.dailyRate).toBe(160);
-    expect(result.projectedTotal).toBe(16000);
-    expect(result.onTrack).toBe(false);
   });
 });
 

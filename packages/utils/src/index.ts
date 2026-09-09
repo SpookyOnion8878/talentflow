@@ -83,36 +83,6 @@ export function generateContractNumber(): string {
   return generateInvoiceNumber("CTR");
 }
 
-// ─── Number Helpers ───
-export function calculateInvoiceTotal(
-  items: Array<{ quantity: number; rate: number }>,
-): { subtotal: number; tax: number; total: number } {
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.rate,
-    0,
-  );
-  const tax = subtotal * 0.11; // 11% default tax
-  return { subtotal, tax, total: subtotal + tax };
-}
-
-export function calculateBudgetBurnRate(
-  totalBudget: number,
-  spent: number,
-  projectDays: number,
-  elapsedDays: number,
-): {
-  dailyRate: number;
-  remainingDays: number;
-  projectedTotal: number;
-  onTrack: boolean;
-} {
-  const dailyRate = elapsedDays > 0 ? spent / elapsedDays : 0;
-  const remainingDays = Math.max(0, projectDays - elapsedDays);
-  const projectedTotal = spent + dailyRate * remainingDays;
-  const onTrack = projectedTotal <= totalBudget;
-  return { dailyRate, remainingDays, projectedTotal, onTrack };
-}
-
 // ─── Status Helpers ───
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {

@@ -469,7 +469,6 @@ pnpm dev
 
 # Or start specific apps
 pnpm --filter @repo/web dev     # Web app on :3000
-pnpm --filter @repo/docs dev    # Docs on :3001 (scaffold)
 ```
 
 ### 6. Access the App
