@@ -1,0 +1,12 @@
+---
+description: Enforce English project communication and consistent attribution metadata
+alwaysApply: true
+---
+
+# Project Language and Attribution
+
+- Write all source-code comments, documentation, test descriptions, commit messages, pull request text, release notes, and technical metadata in English.
+- Keep naming, error messages, log messages, and developer-facing communication consistently in English.
+- When a creator, author, editor, uploader, maintainer, or equivalent attribution field is required, use `SpookyOnion8878`.
+- Do not invent attribution fields in domain models or external systems that do not support them.
+- Do not create commits, push branches, upload artifacts, or publish releases unless the user explicitly requests that action.
