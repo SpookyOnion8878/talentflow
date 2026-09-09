@@ -9,14 +9,14 @@ function ctx(overrides: Partial<CopilotContext> = {}): CopilotContext {
   return {
     unpaid: {
       count: 0,
-      total: 0,
+      totalsByCurrency: {},
       top: [],
       oldest: null,
     },
     expiring: [],
     pendingActions: 0,
     draftInvoices: 0,
-    monthTotal: 0,
+    monthTotalsByCurrency: {},
     ...overrides,
   };
 }
@@ -28,7 +28,7 @@ describe("copilot: buildCopilotResponse (deterministic)", () => {
       ctx({
         unpaid: {
           count: 2,
-          total: 1250,
+          totalsByCurrency: { USD: 1250 },
           top: [
             { id: "inv-1", invoiceNo: "INV-2026-001", dueDate: "2026-08-15" },
             { id: "inv-2", invoiceNo: "INV-2026-002", dueDate: "2026-08-20" },
@@ -54,7 +54,7 @@ describe("copilot: buildCopilotResponse (deterministic)", () => {
     });
   });
 
-  it("tanpa unpaid → jawaban bersih tanpa saran", () => {
+  it("returns a clean answer without suggestions when nothing is unpaid", () => {
     const res = buildCopilotResponse("check_unpaid_invoices", ctx());
     expect(res.answer).toContain("no unpaid invoices");
     expect(res.suggestions).toHaveLength(0);
@@ -93,12 +93,13 @@ describe("copilot: buildCopilotResponse (deterministic)", () => {
     const res = buildCopilotResponse(
       "budget_and_cost",
       ctx({
-        monthTotal: 9000,
+        monthTotalsByCurrency: { EUR: 2500, USD: 9000 },
         draftInvoices: 3,
         pendingActions: 4,
       }),
     );
     expect(res.answer).toContain("USD 9,000.00");
+    expect(res.answer).toContain("EUR 2,500.00");
     expect(res.answer).toContain("3 draft invoice(s)");
     expect(res.answer).toContain("4 agent action(s)");
   });
@@ -133,7 +134,7 @@ describe("copilot: buildCopilotContext (numbers from DB, not LLM)", () => {
           },
         ],
         count: async () => 2,
-        aggregate: async () => ({ _sum: { totalAmount: 150 } }),
+        groupBy: async () => [{ currency: "USD", _sum: { totalAmount: 150 } }],
       },
       complianceRecord: {
         findMany: async () => [
@@ -158,11 +159,11 @@ describe("copilot: buildCopilotContext (numbers from DB, not LLM)", () => {
 
     const result = await buildCopilotContext(prisma as never, "company-1");
     expect(result.unpaid.count).toBe(2);
-    expect(result.unpaid.total).toBe(150);
-    expect(result.expiring).toHaveLength(1); // hanya ≤30 hari
+    expect(result.unpaid.totalsByCurrency).toEqual({ USD: 150 });
+    expect(result.expiring).toHaveLength(1);
     expect(result.expiring[0].daysLeft).toBe(3);
     expect(result.pendingActions).toBe(5);
     expect(result.draftInvoices).toBe(2);
-    expect(result.monthTotal).toBe(150);
+    expect(result.monthTotalsByCurrency).toEqual({ USD: 150 });
   });
 });

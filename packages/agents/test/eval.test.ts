@@ -2,52 +2,60 @@ import { describe, it, expect } from "vitest";
 import { routeIntent } from "../src/engine/router";
 
 /**
- * Golden set intent routing — 18 skenario nyata (billing/compliance/general).
- * Target akurasi MVP: >= 85% (PRD KPI).
+ * Golden intent-routing set with realistic billing, compliance, and general scenarios.
+ * MVP accuracy target: at least 85% (PRD KPI).
  */
 const GOLDEN: Array<[string, string, string]> = [
   // Billing — unpaid
-  ["berapa yang belum dibayar bulan ini?", "check_unpaid_invoices", "BILLING"],
-  ["invoice apa saja yang masih unpaid?", "check_unpaid_invoices", "BILLING"],
-  ["total tagihan belum lunas?", "check_unpaid_invoices", "BILLING"],
-  ["ada invoice yang belum dibayar klien?", "check_unpaid_invoices", "BILLING"],
-  ["follow up invoice yang belum bayar", "check_unpaid_invoices", "BILLING"],
+  ["how much is still unpaid this month?", "check_unpaid_invoices", "BILLING"],
+  ["which invoices are still unpaid?", "check_unpaid_invoices", "BILLING"],
+  ["total outstanding invoices?", "check_unpaid_invoices", "BILLING"],
+  [
+    "are there invoices the client has not paid?",
+    "check_unpaid_invoices",
+    "BILLING",
+  ],
+  ["follow up on unpaid invoices", "check_unpaid_invoices", "BILLING"],
   // Billing — aging / DSO
-  ["buat laporan aging invoice", "aging_report", "BILLING"],
-  ["berapakah DSO kita sekarang?", "aging_report", "BILLING"],
-  ["invoice mana yang sudah jatuh tempo?", "aging_report", "BILLING"],
+  ["create an invoice aging report", "aging_report", "BILLING"],
+  ["what is our current DSO?", "aging_report", "BILLING"],
+  ["which invoices are overdue?", "aging_report", "BILLING"],
   // Billing — draft
   [
-    "buat draft invoice untuk freelancer ini",
+    "create a draft invoice for this freelancer",
     "create_invoice_draft",
     "BILLING",
   ],
-  ["generate invoice minggu ini", "create_invoice_draft", "BILLING"],
+  ["generate an invoice this week", "create_invoice_draft", "BILLING"],
   // Billing — budget
   [
-    "berapa yang sudah terpakai dari budget bulan ini?",
+    "how much of this month's budget has been used?",
     "budget_and_cost",
     "BILLING",
   ],
-  ["ringkasan token agent bulan ini", "budget_and_cost", "BILLING"],
+  ["summarize agent tokens this month", "budget_and_cost", "BILLING"],
   // Compliance
-  ["dokumen apa yang mau kadaluarsa?", "compliance_status", "COMPLIANCE"],
-  ["visa freelancer mana yang mau expire?", "compliance_status", "COMPLIANCE"],
-  ["compliance kerja apa yang expired?", "compliance_status", "COMPLIANCE"],
+  ["which documents are about to expire?", "compliance_status", "COMPLIANCE"],
+  ["which freelancer visas are expiring?", "compliance_status", "COMPLIANCE"],
   [
-    "kirim pengingat dokumen yang mau kadaluwarsa",
+    "which work compliance records have expired?",
+    "compliance_status",
+    "COMPLIANCE",
+  ],
+  [
+    "send reminders for expiring documents",
     "compliance_reminder",
     "COMPLIANCE",
   ],
   [
-    "remind aku tentang izin kerja yang mau habis",
+    "remind me about expiring work permits",
     "compliance_reminder",
     "COMPLIANCE",
   ],
   // General
-  ["halo, kamu bisa bantu apa?", "general_question", "GENERAL"],
-  ["siapa kamu?", "general_question", "GENERAL"],
-  ["bagaimana cara masuk ke aplikasi?", "general_question", "GENERAL"],
+  ["hello, what can you help with?", "general_question", "GENERAL"],
+  ["who are you?", "general_question", "GENERAL"],
+  ["how do I sign in to the application?", "general_question", "GENERAL"],
 ];
 
 describe("eval: intent router (golden set)", () => {
@@ -61,17 +69,17 @@ describe("eval: intent router (golden set)", () => {
     }
     const accuracy = correct / GOLDEN.length;
     expect(accuracy).toBeGreaterThanOrEqual(0.85);
-    expect(accuracy).toBe(1); // rule-based deterministik harus sempurna pada golden
+    expect(accuracy).toBe(1); // The deterministic rules must be perfect on the golden set.
   });
 
   it("falls back to GENERAL for out-of-domain questions", () => {
-    const d = routeIntent("tolong review performance dashboard saya");
+    const d = routeIntent("please review my performance dashboard");
     expect(d.agentType).toBe("GENERAL");
   });
 
   it("prioritizes financial intent over compliance on mixed queries", () => {
     const d = routeIntent(
-      "invoice belum dibayar dan compliance mau kadaluarsa",
+      "an invoice is unpaid and a compliance document is expiring",
     );
     expect(d.intent).toBe("check_unpaid_invoices");
     expect(d.agentType).toBe("BILLING");

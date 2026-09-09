@@ -1,8 +1,10 @@
+import { decimalToNumber } from "@repo/db";
 import type { PrismaClient } from "@repo/db";
 import type { AgentType, StepRecord } from "../types";
 import { endRun, startRun } from "./core";
 import { searchEmbeddings, type SearchHit } from "../rag";
 import { getEmbeddingProvider } from "../providers/registry";
+import { canProcessCompanyDataWithProvider } from "../providers/data-governance";
 
 export interface CopilotSuggestion {
   tool: string;
@@ -11,10 +13,14 @@ export interface CopilotSuggestion {
   reason: string;
 }
 
+export interface StoredCopilotSuggestion extends CopilotSuggestion {
+  id: string;
+}
+
 export interface CopilotContext {
   unpaid: {
     count: number;
-    total: number;
+    totalsByCurrency: Record<string, number>;
     top: Array<{ id: string; invoiceNo: string; dueDate: string }>;
     oldest: {
       id: string;
@@ -33,13 +39,10 @@ export interface CopilotContext {
   }>;
   pendingActions: number;
   draftInvoices: number;
-  monthTotal: number;
+  monthTotalsByCurrency: Record<string, number>;
 }
 
-/**
- * Ringkasan data nyata perusahaan untuk jawaban kopilot.
- * Semua angka dihitung kode deterministik (LLM tidak menghitung).
- */
+/** Builds verified company context with deterministic calculations. */
 export async function buildCopilotContext(
   prisma: PrismaClient,
   companyId: string,
@@ -88,7 +91,8 @@ export async function buildCopilotContext(
     prisma.invoice.count({
       where: { companyId, status: "DRAFT" },
     }),
-    prisma.invoice.aggregate({
+    prisma.invoice.groupBy({
+      by: ["currency"],
       _sum: { totalAmount: true },
       where: {
         companyId,
@@ -116,7 +120,14 @@ export async function buildCopilotContext(
   return {
     unpaid: {
       count: unpaidInvoices.length,
-      total: unpaidInvoices.reduce((s, i) => s + i.amount, 0),
+      totalsByCurrency: unpaidInvoices.reduce<Record<string, number>>(
+        (totals, invoice) => {
+          totals[invoice.currency] =
+            (totals[invoice.currency] ?? 0) + decimalToNumber(invoice.amount);
+          return totals;
+        },
+        {},
+      ),
       top: unpaidInvoices.slice(0, 3).map((i) => ({
         id: i.id,
         invoiceNo: i.invoiceNo,
@@ -129,7 +140,7 @@ export async function buildCopilotContext(
             dueDate: (unpaidInvoices[0].dueDate ?? unpaidInvoices[0].createdAt)
               .toISOString()
               .slice(0, 10),
-            amount: unpaidInvoices[0].amount,
+            amount: decimalToNumber(unpaidInvoices[0].amount),
             currency: unpaidInvoices[0].currency,
           }
         : null,
@@ -137,7 +148,12 @@ export async function buildCopilotContext(
     expiring,
     pendingActions,
     draftInvoices,
-    monthTotal: monthInvoices._sum.totalAmount ?? 0,
+    monthTotalsByCurrency: Object.fromEntries(
+      monthInvoices.map((group) => [
+        group.currency,
+        decimalToNumber(group._sum.totalAmount ?? 0),
+      ]),
+    ),
   };
 }
 
@@ -152,7 +168,14 @@ function fmtAmount(value: number, currency: string): string {
   })}`;
 }
 
-// ─── Generator jawaban & saran (deterministik, mengutip data nyata) ───
+function fmtAmountBreakdown(totals: Record<string, number>): string {
+  const values = Object.entries(totals)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([currency, amount]) => fmtAmount(amount, currency));
+  return values.length > 0 ? values.join("; ") : fmtAmount(0, "USD");
+}
+
+// Deterministic response and suggestion generation from verified company data.
 
 export function buildCopilotResponse(
   intent: string,
@@ -182,9 +205,8 @@ export function buildCopilotResponse(
       ? `Oldest invoice: ${u.oldest.invoiceNo} (${fmtAmount(u.oldest.amount, u.oldest.currency)}) due ${u.oldest.dueDate}.`
       : "";
     return {
-      answer: `There are ${u.count} unpaid invoices totaling ${fmtAmount(
-        u.total,
-        u.oldest?.currency ?? "USD",
+      answer: `There are ${u.count} unpaid invoices totaling ${fmtAmountBreakdown(
+        u.totalsByCurrency,
       )}. ${oldestLine}\nI can send automatic reminders — proposals land in the Approval Queue for your approval.`,
       suggestions,
     };
@@ -233,9 +255,8 @@ export function buildCopilotResponse(
 
   if (intent === "budget_and_cost") {
     return {
-      answer: `Total invoiced this month: ${fmtAmount(
-        ctx.monthTotal,
-        "USD",
+      answer: `Total invoiced this month: ${fmtAmountBreakdown(
+        ctx.monthTotalsByCurrency,
       )}. There are ${ctx.draftInvoices} draft invoice(s) waiting to be sent, and ${
         ctx.pendingActions
       } agent action(s) awaiting approval in the Approval Queue.`,
@@ -243,7 +264,7 @@ export function buildCopilotResponse(
     };
   }
 
-  void ctx; // fallback answer needs no data; guides the user.
+  void ctx;
   const base = {
     answer:
       "I can help with your company data:\n• Unpaid invoice status & reminder proposals\n• Compliance document health (expiry within 30 days)\n• Monthly budget summary\nExample: ask “how much is unpaid this month?”",
@@ -260,11 +281,51 @@ export function buildCopilotResponse(
   };
 }
 
-/**
- * Chat kopilot: klasifikasi intent (rules), ambil konteks perusahaan,
- * susun jawaban + saran aksi (propose), catat sebagai AgentRun USER_CHAT.
- * Sepenuhnya deterministik — berjalan $0 tanpa LLM API key.
- */
+export function findStoredCopilotSuggestion(
+  steps: unknown,
+  suggestionId: string,
+): StoredCopilotSuggestion | null {
+  if (!Array.isArray(steps)) return null;
+
+  for (const step of steps) {
+    if (!step || typeof step !== "object" || !("output" in step)) continue;
+    const output = step.output;
+    if (!output || typeof output !== "object" || !("suggestions" in output)) {
+      continue;
+    }
+    const suggestions = output.suggestions;
+    if (!Array.isArray(suggestions)) continue;
+
+    const candidate = suggestions.find(
+      (suggestion) =>
+        suggestion &&
+        typeof suggestion === "object" &&
+        "id" in suggestion &&
+        suggestion.id === suggestionId,
+    );
+    if (
+      candidate &&
+      typeof candidate === "object" &&
+      "id" in candidate &&
+      typeof candidate.id === "string" &&
+      "tool" in candidate &&
+      typeof candidate.tool === "string" &&
+      "label" in candidate &&
+      typeof candidate.label === "string" &&
+      "reason" in candidate &&
+      typeof candidate.reason === "string" &&
+      "params" in candidate &&
+      candidate.params !== null &&
+      typeof candidate.params === "object" &&
+      !Array.isArray(candidate.params)
+    ) {
+      return candidate as StoredCopilotSuggestion;
+    }
+  }
+  return null;
+}
+
+/** Runs deterministic company-data chat and stores server-issued suggestions. */
 export async function runCopilotChat(
   prisma: PrismaClient,
   companyId: string,
@@ -273,7 +334,7 @@ export async function runCopilotChat(
 ): Promise<{
   runId: string;
   answer: string;
-  suggestions: CopilotSuggestion[];
+  suggestions: StoredCopilotSuggestion[];
 }> {
   const run = await startRun(prisma, {
     companyId,
@@ -296,13 +357,16 @@ export async function runCopilotChat(
     let related: SearchHit[] = [];
     if (decision.intent === "general_question") {
       try {
-        related = await searchEmbeddings(
-          prisma,
-          companyId,
-          rawMessage ?? "company records",
-          getEmbeddingProvider(),
-          3,
-        );
+        const provider = getEmbeddingProvider();
+        if (canProcessCompanyDataWithProvider(companyId, provider)) {
+          related = await searchEmbeddings(
+            prisma,
+            companyId,
+            rawMessage ?? "company records",
+            provider,
+            3,
+          );
+        }
       } catch {
         related = [];
       }
@@ -312,12 +376,16 @@ export async function runCopilotChat(
       ctx,
       related,
     );
+    const storedSuggestions = suggestions.map((suggestion, index) => ({
+      ...suggestion,
+      id: String(index),
+    }));
 
     steps.push({
       index: 1,
       kind: "message",
       output: {
-        suggestions: suggestions.length,
+        suggestions: storedSuggestions,
         pendingActions: ctx.pendingActions,
         ragHits: related.length,
       },
@@ -327,7 +395,7 @@ export async function runCopilotChat(
       status: "SUCCEEDED",
       steps,
     });
-    return { runId: run.id, answer, suggestions };
+    return { runId: run.id, answer, suggestions: storedSuggestions };
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     await endRun(prisma, run.id, { status: "FAILED", steps, error });

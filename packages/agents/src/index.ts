@@ -8,11 +8,15 @@ export {
 export { GeminiProvider } from "./providers/gemini";
 export { OllamaProvider } from "./providers/ollama";
 export { MockProvider } from "./providers/mock";
+export {
+  canProcessCompanyDataWithProvider,
+  isExternalModelProvider,
+} from "./providers/data-governance";
 export { zodToJsonSchema } from "./tools/schema";
 export { calcInvoice, buildInvoiceNo, billingTools } from "./tools/billing";
 export { complianceTools, REQUIRED_ACTIVE_TYPES } from "./tools/compliance";
 export { toolRegistry, getTool } from "./tools/registry";
-export { evaluateGuard } from "./guards/pipeline";
+export { canApproveTool, evaluateGuard } from "./guards/pipeline";
 export { fetchAgentConfig } from "./config";
 export { sendAgentEmail, emailRecipients } from "./email";
 export * from "./engine/core";
@@ -25,8 +29,13 @@ export {
   runCopilotChat,
   buildCopilotContext,
   buildCopilotResponse,
+  findStoredCopilotSuggestion,
 } from "./engine/copilot";
-export type { CopilotContext, CopilotSuggestion } from "./engine/copilot";
+export type {
+  CopilotContext,
+  CopilotSuggestion,
+  StoredCopilotSuggestion,
+} from "./engine/copilot";
 export {
   enqueueAgentJob,
   claimPendingJobs,

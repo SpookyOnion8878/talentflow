@@ -4,10 +4,7 @@ export interface ToolCall {
 }
 
 /**
- * Rol pesan internal engine (normalisasi antar provider):
- * - system / user → text
- * - assistant → text dan/atau suatu panggilan tool
- * - tool → hasil eksekusi tool (ganjil ke-1)
+ * Normalized internal message roles shared by every provider.
  */
 export type ChatRole = "system" | "user" | "assistant" | "tool";
 
@@ -15,7 +12,7 @@ export interface ChatMessage {
   role: ChatRole;
   content?: string | null;
   toolCall?: ToolCall | null;
-  /** nama tool untuk pesan role "tool" */
+  /** Tool name for a message with the tool role. */
   name?: string;
 }
 
@@ -43,6 +40,6 @@ export interface ChatResult {
 export interface ModelProvider {
   readonly name: string;
   chat(options: ChatOptions): Promise<ChatResult>;
-  /** Vektor embedding untuk RAG (dim harus konsisten antar provider). */
+  /** RAG embedding vector whose dimensions must be consistent across providers. */
   embed(text: string): Promise<number[]>;
 }

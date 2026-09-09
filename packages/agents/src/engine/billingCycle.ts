@@ -3,6 +3,7 @@ import type { AgentTrigger, StepRecord } from "../types";
 import { attachToolAction, endRun, startRun } from "./core";
 import { fetchAgentConfig } from "../config";
 import { calcInvoice, billingTools } from "../tools/billing";
+import { DEFAULT_INVOICE_TAX_RATE } from "@repo/db";
 
 const createInvoiceTool = billingTools.find(
   (t) => t.name === "createDraftInvoice",
@@ -17,9 +18,9 @@ export interface BillingPeriod {
 }
 
 /**
- * Workflow deterministik: kumpulkan timesheet approved dalam periode,
- * hitung invoice (math murni), buat AgentAction PROPOSE per freelancer.
- * LLM tidak dilibatkan dalam perhitungan.
+ * Deterministic workflow: collect approved timesheets for a period,
+ * calculate invoices, and propose one action per freelancer and contract.
+ * The language model never participates in financial calculations.
  */
 export async function runBillingCycle(
   prisma: PrismaClient,
@@ -71,7 +72,7 @@ export async function runBillingCycle(
     >();
 
     for (const s of sheets) {
-      if (!s.contract) continue; // tanpa rate/kontrak aktif → tidak di-invoice
+      if (!s.contract) continue;
       const key = `${s.freelancer.id}:${s.contract.id}`;
       const existing = groups.get(key);
       if (existing) {
@@ -80,7 +81,7 @@ export async function runBillingCycle(
         groups.set(key, {
           freelancerId: s.freelancer.id,
           contractId: s.contract.id,
-          ratePerHour: s.contract.ratePerHour,
+          ratePerHour: s.contract.ratePerHour.toNumber(),
           currency: s.contract.currency ?? s.freelancer.currency,
           hours: s.hours,
         });
@@ -92,6 +93,10 @@ export async function runBillingCycle(
       const math = calcInvoice({
         hours: g.hours,
         ratePerHour: g.ratePerHour,
+        // Match the default tax rate used by human-created invoices so agent
+        // drafts and manual invoices compute tax identically (11%). Convert to
+        // a number because calcInvoice works in plain JS arithmetic.
+        taxRate: DEFAULT_INVOICE_TAX_RATE.toNumber(),
         currency: g.currency,
       });
 
@@ -108,16 +113,13 @@ export async function runBillingCycle(
           periodEnd: end.toISOString(),
           hours: g.hours,
           rate: math.rate,
-          amount: math.amount,
-          taxAmount: math.tax,
-          totalAmount: math.total,
+          taxRate: DEFAULT_INVOICE_TAX_RATE.toNumber(),
           currency: math.currency,
           items: [
             {
               description: `Working hours ${start.toISOString().slice(0, 10)} to ${end.toISOString().slice(0, 10)}`,
               quantity: g.hours,
               rate: math.rate,
-              amount: math.amount,
             },
           ],
         },
@@ -144,8 +146,7 @@ export async function runBillingCycle(
 }
 
 /**
- * Ringkasan mingguan untuk Finance (AUTO): kirim email DSO/aging via tool
- * sendWeeklySummary. Berjalan di cron mingguan terpisah dari siklus invoice.
+ * Sends the weekly finance summary independently from the invoice cycle.
  */
 export async function runWeeklySummary(
   prisma: PrismaClient,

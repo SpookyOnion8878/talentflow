@@ -24,6 +24,7 @@ export interface ToolContext {
   prisma: PrismaClient;
   triggeredBy?: string | null;
   actorRole?: Role;
+  isApproval?: boolean;
 }
 
 export interface ToolDef {
@@ -32,7 +33,9 @@ export interface ToolDef {
   inputSchema: z.ZodType<unknown>;
   defaultMode: AgentActionMode;
   permission: Role[];
-  /** value in currency, used for auto-action threshold guard */
+  approvalPermission?: Role[];
+  readOnly?: boolean;
+  /** Monetary value used by the automatic-action threshold guard. */
   monetary?: (input: unknown) => number | null;
   idempotencyKey?: (ctx: ToolContext, input: unknown) => Promise<string | null>;
   execute: (ctx: ToolContext, input: unknown) => Promise<unknown>;

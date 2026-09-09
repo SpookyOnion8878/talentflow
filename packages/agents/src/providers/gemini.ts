@@ -17,10 +17,7 @@ function parseJsonSafe(raw: string): unknown {
   }
 }
 
-/**
- * Menerjemahkan pesan engine ke body REST Gemini (murni, bisa di-test
- * tanpa jaringan).
- */
+/** Converts internal engine messages into a testable Gemini REST payload. */
 export function buildGeminiMessages(
   options: ChatOptions,
 ): Record<string, unknown> {
@@ -131,7 +128,7 @@ export class GeminiProvider implements ModelProvider {
   async chat(options: ChatOptions): Promise<ChatResult> {
     const body = buildGeminiMessages(options);
     const res = await fetch(
-      `${API_BASE}/models/${options.model}/:generateContent`,
+      `${API_BASE}/models/${options.model}:generateContent`,
       {
         method: "POST",
         headers: {

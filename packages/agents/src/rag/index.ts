@@ -11,15 +11,14 @@ export interface SearchHit {
   similarity: number;
 }
 
-/** Render vektor sebagai literal pgvector (nilai numerik dari provider). */
+/** Renders a provider vector as a numeric pgvector literal. */
 function vectorLiteral(vector: number[]): string {
   return `'[${vector.join(",")}]'::vector`;
 }
 
 /**
- * Indeks ulang seluruh entitas perusahaan ke tabel agent_embeddings.
- * Chunk yang tidak lagi muncul di data (stale) ikut dihapus, sehingga
- * index selalu mencerminkan state terbaru.
+ * Reindexes every company entity into the agent_embeddings table.
+ * Stale chunks are removed so the index always reflects current state.
  */
 export async function ingestCompanyData(
   prisma: PrismaClient,
@@ -54,7 +53,7 @@ export async function ingestCompanyData(
   return { indexed: chunks.length, deleted };
 }
 
-/** Upsert satu chunk (ON CONFLICT pada unique [companyId, entityType, entityId]). */
+/** Upserts one chunk using the unique company and entity identity. */
 export async function upsertEmbedding(
   prisma: PrismaClient,
   companyId: string,
@@ -70,7 +69,7 @@ export async function upsertEmbedding(
   );
 }
 
-/** Kosongkan index embeddings sebuah perusahaan (mis. saat data dihapus). */
+/** Clears a company's embedding index, such as when its data is deleted. */
 export async function deleteCompanyEmbeddings(
   prisma: PrismaClient,
   companyId: string,
@@ -82,9 +81,8 @@ export async function deleteCompanyEmbeddings(
 }
 
 /**
- * Cari chunk paling mirip secara semantik terhadap query.
- * Memakai operator cosine distance (<=>) dari pgvector; hasil diurutkan
- * dari yang terdekat, hanya dari perusahaan pemanggil (tenant-safe).
+ * Finds the chunks most semantically similar to a query.
+ * Results use pgvector cosine distance and remain scoped to the caller's company.
  */
 export async function searchEmbeddings(
   prisma: PrismaClient,

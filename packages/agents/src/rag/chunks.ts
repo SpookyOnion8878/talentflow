@@ -7,9 +7,8 @@ export interface EmbeddingChunk {
 }
 
 /**
- * Ambil semua entitas perusahaan yang diindeks RAG lalu susun teks chunk
- * per entitas (satu chunk per baris data). Teks sengaja berbentuk kalimat
- * sederhana agar embedding model kecil tetap bermakna.
+ * Loads all company entities indexed by RAG and creates one text chunk per
+ * row. Simple sentences preserve useful meaning for smaller embedding models.
  */
 export async function buildChunks(
   prisma: PrismaClient,

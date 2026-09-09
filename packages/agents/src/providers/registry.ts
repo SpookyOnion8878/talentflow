@@ -3,7 +3,7 @@ import { GeminiProvider } from "./gemini";
 import { OllamaProvider } from "./ollama";
 import { MockProvider } from "./mock";
 
-/** Mengambil provider dari env. Default: gemini (gratis). */
+/** Selects the provider from the environment, defaulting to Gemini. */
 export function getProvider(): ModelProvider {
   const provider = (process.env.MODEL_PROVIDER ?? "gemini").toLowerCase();
 
@@ -17,7 +17,7 @@ export function getProvider(): ModelProvider {
   }
 }
 
-/** Nama model per tier tugas. Default gemini-2.5-flash (fast) untuk hemat kuota. */
+/** Selects the model for a task tier, defaulting to the efficient fast model. */
 export function getModelFor(tier: "fast" | "deep" = "fast"): string {
   return (
     process.env[tier === "fast" ? "MODEL_FAST" : "MODEL_DEEP"] ??
@@ -26,9 +26,8 @@ export function getModelFor(tier: "fast" | "deep" = "fast"): string {
 }
 
 /**
- * Provider untuk embedding RAG. Bisa dijalankan tanpa API key ($0):
- * pakai Gemini bila ada GEMINI_API_KEY, kalau tidak jatuh ke MockProvider
- * (deterministik, cocok untuk dev/demo/test).
+ * Selects the RAG embedding provider. Gemini is used when its API key exists;
+ * otherwise the deterministic mock provider supports development and tests.
  */
 export function getEmbeddingProvider(): ModelProvider {
   const provider = (process.env.MODEL_PROVIDER ?? "gemini").toLowerCase();

@@ -6,7 +6,7 @@ import type { ToolDef } from "../src/types";
 
 const REMINDER: ToolDef = {
   name: "sendInvoiceReminder",
-  description: "Kirim reminder tagihan",
+  description: "Send an invoice reminder",
   inputSchema: z.object({ invoiceId: z.string(), tier: z.number() }),
   defaultMode: "AUTO",
   permission: ["SYSTEM"],
@@ -21,6 +21,7 @@ function makePrisma() {
     agentConfig: {
       findUnique: vi.fn().mockResolvedValue({
         enabled: true,
+        mode: "AUTO",
         monthlyTokenBudget: 5000,
         toolOverrides: {},
         autoActionThreshold: null,
@@ -77,7 +78,7 @@ class ScriptedProvider implements ModelProvider {
           },
           totalTokens: 10,
         }
-      : { content: c.text ?? "Selesai.", totalTokens: 10 };
+      : { content: c.text ?? "Completed.", totalTokens: 10 };
   }
 
   async embed(): Promise<number[]> {
@@ -86,7 +87,7 @@ class ScriptedProvider implements ModelProvider {
 }
 
 describe("runReActLoop", () => {
-  it("memanggil tool AUTO lalu selesai dengan pesan final", async () => {
+  it("executes an automatic tool and completes with a final message", async () => {
     const { prisma, actions, getRun } = makePrisma();
     const provider = new ScriptedProvider([
       {
@@ -95,7 +96,7 @@ describe("runReActLoop", () => {
           args: { invoiceId: "i1", tier: 1 },
         },
       },
-      { text: "Selesai." },
+      { text: "Completed." },
     ]);
 
     const run = await runReActLoop({
@@ -104,7 +105,7 @@ describe("runReActLoop", () => {
       agentType: "BILLING",
       triggerType: "CRON_DAILY",
       intent: "test",
-      systemPrompt: "Bantu dashboard",
+      systemPrompt: "Assist with the dashboard",
       tools: [REMINDER],
       provider,
     });
@@ -119,10 +120,11 @@ describe("runReActLoop", () => {
     expect(finalRun.steps).toHaveLength(2);
   });
 
-  it("tidak menjalankan apa pun jika konfigurasi agent non-aktif", async () => {
+  it("does not execute tools when the agent configuration is disabled", async () => {
     const { prisma, actions } = makePrisma();
     prisma.agentConfig.findUnique.mockResolvedValue({
       enabled: false,
+      mode: "AUTO",
       monthlyTokenBudget: 5000,
       toolOverrides: {},
       autoActionThreshold: null,

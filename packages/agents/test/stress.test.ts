@@ -5,10 +5,9 @@ import { attachToolAction } from "../src/engine/core";
 import type { ToolDef } from "../src/types";
 
 /**
- * Property stress test: guard idempotensi + unique index (tool, idempotencyKey)
- * tidak boleh menghasilkan invoice duplikat meski dipanggil 100x /
- * bersamaan. Fake prisma menyimulasikan perilaku Postgres: create yang
- * melanggar unique (P2002) dilempar, findFirst IDEMPOTENT status executed.
+ * Property stress test: the idempotency guard and unique tool key must not
+ * create duplicate invoices across 100 concurrent calls. The fake Prisma
+ * client simulates PostgreSQL by throwing P2002 for duplicate inserts.
  */
 
 const INVOICE_TOOL: ToolDef = {
@@ -68,13 +67,12 @@ function makeFakeDb() {
 
   const agentAction = {
     findFirst: async (args: {
-      where: { tool: string; idempotencyKey: string; status: { in: string[] } };
+      where: { tool: string; idempotencyKey: string };
     }) => {
       const hit = store.find(
         (a) =>
           a.tool === args.where.tool &&
-          a.idempotencyKey === args.where.idempotencyKey &&
-          args.where.status.in.includes(a.status),
+          a.idempotencyKey === args.where.idempotencyKey,
       );
       return hit ?? null;
     },
@@ -123,8 +121,8 @@ function makeFakeDb() {
   return { prisma, actions: store, count: () => store.length };
 }
 
-describe("guardrail: stress idempotency (100 iterasi, tanpa invoice duplikat)", () => {
-  it("run simultan 100x → tepat 1 aksi berhasil, 99 terdeteksi duplikat", async () => {
+describe("guardrail: stress idempotency (100 iterations, no duplicate invoices)", () => {
+  it("allows exactly one action when 100 runs execute concurrently", async () => {
     const { prisma, count } = makeFakeDb();
     const results = await Promise.all(
       Array.from({ length: 100 }, (_, i) =>
@@ -152,7 +150,7 @@ describe("guardrail: stress idempotency (100 iterasi, tanpa invoice duplikat)", 
     expect(count()).toBe(1);
   });
 
-  it("sekuensial 100x dengan key sama → hanya 1 proyek yang tersimpan", async () => {
+  it("stores only one action across 100 sequential runs with the same key", async () => {
     const { prisma, count } = makeFakeDb();
     for (let i = 0; i < 100; i++) {
       await attachToolAction({
@@ -169,7 +167,7 @@ describe("guardrail: stress idempotency (100 iterasi, tanpa invoice duplikat)", 
     expect(count()).toBe(1);
   });
 
-  it("period berbeda → draft diperbolehkan lagi (bukan duplikat)", async () => {
+  it("allows another draft for a different period", async () => {
     const { prisma, count } = makeFakeDb();
     for (const periodStart of ["2026-08-01", "2026-08-15"]) {
       await attachToolAction({

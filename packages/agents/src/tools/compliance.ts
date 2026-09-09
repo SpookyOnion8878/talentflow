@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolContext, ToolDef } from "../types";
 import { sendAgentEmail } from "../email";
 
-/** Tipe dokumen yang wajib aktif agar freelancer boleh terus bekerja. */
+/** Document types that must remain active for a freelancer to keep working. */
 export const REQUIRED_ACTIVE_TYPES = [
   "WORK_PERMIT",
   "VISA",
@@ -20,6 +20,7 @@ export const complianceTools: ToolDef[] = [
     }),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    readOnly: true,
     execute: async (ctx, input) => {
       const horizonDays =
         (input as { horizonDays?: number }).horizonDays ?? 365;
@@ -74,6 +75,7 @@ export const complianceTools: ToolDef[] = [
     }),
     defaultMode: "PROPOSE",
     permission: ["SYSTEM", "OWNER", "ADMIN", "FINANCE"],
+    approvalPermission: ["OWNER", "ADMIN"],
     idempotencyKey: (ctx, input) => {
       const i = input as { recordId: string; stage: string };
       return Promise.resolve(
@@ -87,7 +89,10 @@ export const complianceTools: ToolDef[] = [
         stage: string;
       };
       const record = await ctx.prisma.complianceRecord.findFirst({
-        where: { id: i.recordId },
+        where: {
+          id: i.recordId,
+          freelancer: { companyId: ctx.companyId },
+        },
         include: {
           freelancer: { select: { id: true, firstName: true, lastName: true } },
         },
@@ -136,6 +141,7 @@ export const complianceTools: ToolDef[] = [
     inputSchema: z.object({ recordId: z.string() }),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    approvalPermission: ["OWNER", "ADMIN"],
     idempotencyKey: (ctx, input) => {
       const i = input as { recordId: string };
       return Promise.resolve(
@@ -145,7 +151,10 @@ export const complianceTools: ToolDef[] = [
     execute: async (ctx, input) => {
       const i = input as { recordId: string };
       const record = await ctx.prisma.complianceRecord.findFirst({
-        where: { id: i.recordId },
+        where: {
+          id: i.recordId,
+          freelancer: { companyId: ctx.companyId },
+        },
       });
       if (!record) throw new Error(`Compliance ${i.recordId} not found`);
       if (record.status === "EXPIRED") {
@@ -168,6 +177,7 @@ export const complianceTools: ToolDef[] = [
     }),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    approvalPermission: ["OWNER", "ADMIN"],
     idempotencyKey: (ctx, input) =>
       Promise.resolve(
         `${ctx.companyId}:freelancer:suspend:${(input as { freelancerId: string }).freelancerId}`,

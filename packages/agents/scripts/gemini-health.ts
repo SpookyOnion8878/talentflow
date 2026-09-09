@@ -1,15 +1,15 @@
 import { GeminiProvider } from "../src/providers/gemini";
 
 /**
- * Sanity check live ke Gemini API (native endpoint, format key baru "AQ.Ab").
- * Jalankan tanpa membagikan key ke pihak lain:
+ * Runs a live sanity check against the native Gemini API endpoint.
+ * Run it without sharing the key with another party:
  *   $env:GEMINI_API_KEY="AQ.Ab....."; pnpm --filter @repo/agents exec tsx scripts/gemini-health.ts
  */
 async function main(): Promise<void> {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) {
     console.error(
-      "GEMINI_API_KEY kosong. Set dulu: $env:GEMINI_API_KEY='AQ.Ab...'",
+      "GEMINI_API_KEY is empty. Set it first: $env:GEMINI_API_KEY='AQ.Ab...'",
     );
     process.exit(1);
   }

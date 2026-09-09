@@ -36,9 +36,9 @@ async function loadRecords(
 }
 
 /**
- * Workflow deterministik: scan dokumen compliance; kirim reminder 30/7/0
- * hari sebelum expiry (AUTO), tandai EXPIRED & suspend freelancer jika
- * dokumen wajib sudah lewat masa berlaku.
+ * Deterministic workflow: scans compliance documents, sends reminders 30, 7,
+ * and 0 days before expiry, then expires mandatory records and suspends the
+ * freelancer when required documents are no longer valid.
  */
 export async function runComplianceScan(
   prisma: PrismaClient,
@@ -92,7 +92,7 @@ export async function runComplianceScan(
         index++;
       }
 
-      // Sudah lewat → EXPIRED; jika dokumen wajib → suspend freelancer.
+      // Expire overdue records and suspend the freelancer for required documents.
       if (
         r.status === "VERIFIED" &&
         daysLeft < 0 &&

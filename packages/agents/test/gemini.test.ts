@@ -1,15 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildGeminiMessages,
+  GeminiProvider,
   parseGeminiResponse,
 } from "../src/providers/gemini";
 import type { ChatMessage } from "../src/providers/types";
 
 describe("buildGeminiMessages", () => {
-  it("memetakan system → systemInstruction dan tool result → functionResponse", () => {
+  it("maps system and tool messages to the Gemini request format", () => {
     const messages: ChatMessage[] = [
-      { role: "system", content: "kamu agent" },
-      { role: "user", content: "halo" },
+      { role: "system", content: "You are an agent" },
+      { role: "user", content: "Hello" },
       {
         role: "assistant",
         toolCall: { name: "calcInvoice", arguments: "{}" },
@@ -19,12 +20,14 @@ describe("buildGeminiMessages", () => {
 
     const body = buildGeminiMessages({
       model: "gemini-2.5-flash",
-      systemPrompt: "kamu agent",
+      systemPrompt: "You are an agent",
       messages,
       temperature: 0.2,
     });
 
-    expect((body.systemInstruction as any).parts[0].text).toBe("kamu agent");
+    expect((body.systemInstruction as any).parts[0].text).toBe(
+      "You are an agent",
+    );
     const contents = body.contents as Array<{ role: string; parts: any[] }>;
     expect(contents[0].role).toBe("user");
     expect(contents[1].role).toBe("model");
@@ -36,7 +39,7 @@ describe("buildGeminiMessages", () => {
 });
 
 describe("parseGeminiResponse", () => {
-  it("mengambil teks & token", () => {
+  it("extracts text and token usage", () => {
     const result = parseGeminiResponse(
       JSON.stringify({
         candidates: [{ content: { parts: [{ text: "ok" }] } }],
@@ -48,7 +51,7 @@ describe("parseGeminiResponse", () => {
     expect(result.toolCall).toBeNull();
   });
 
-  it("mengambil functionCall", () => {
+  it("extracts function calls", () => {
     const result = parseGeminiResponse(
       JSON.stringify({
         candidates: [
@@ -72,7 +75,35 @@ describe("parseGeminiResponse", () => {
     expect(JSON.parse(result.toolCall!.arguments)).toEqual({ id: "1" });
   });
 
-  it("melempar error bila tidak ada kandidat", () => {
+  it("throws when the API returns no candidates", () => {
     expect(() => parseGeminiResponse('{"candidates":[]}')).toThrow();
+  });
+});
+
+describe("GeminiProvider", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("uses the documented generateContent endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: "ok" }] } }],
+        }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new GeminiProvider("test-key");
+    await provider.chat({
+      model: "gemini-test",
+      messages: [{ role: "user", content: "Hello" }],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent",
+      expect.any(Object),
+    );
   });
 });

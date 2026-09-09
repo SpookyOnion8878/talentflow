@@ -1,10 +1,10 @@
 /**
- * Smoke test end-to-end (router tRPC tidak diperlukan):
- * 1) Billing cycle → draft invoice PROPOSE di approval queue
- * 2) Compliance scan → reminder/expired/suspend
- * 3) Copilot chat → jawaban berbasis data nyata + saran aksi
+ * End-to-end smoke test without the tRPC router:
+ * 1) Billing cycle creates a proposed draft invoice in the approval queue.
+ * 2) Compliance scan handles reminders, expiry, and suspension.
+ * 3) Copilot chat returns data-backed answers and action suggestions.
  *
- * Jalankan: pnpm --filter @repo/agents smoke
+ * Run: pnpm --filter @repo/agents smoke
  */
 import { PrismaClient } from "@repo/db";
 import {
@@ -24,13 +24,13 @@ async function main() {
 
   const company = await prisma.company.findFirst({ select: { id: true } });
   if (!company) {
-    console.log("Tidak ada company — jalankan db:seed dulu.");
+    console.log("No company exists. Run db:seed first.");
     return;
   }
   console.log("Company:", company.id);
 
   const expired = await expireStaleActions(prisma);
-  console.log("Aksi stale yang di-EXPIRED:", expired);
+  console.log("Stale actions marked as expired:", expired);
 
   const runB = await runBillingCycle(prisma, company.id, "CRON_WEEKLY");
   console.log("\n[Billing] run:", runB?.id, "| status:", runB?.status);
@@ -66,7 +66,7 @@ async function main() {
     );
   }
 
-  const decision = routeIntent("berapa yang belum dibayar bulan ini?");
+  const decision = routeIntent("how much is still unpaid this month?");
   const chat = await runCopilotChat(prisma, company.id, decision);
   console.log("\n[Copilot] intent:", decision.intent);
   console.log("Answer:\n" + chat.answer);

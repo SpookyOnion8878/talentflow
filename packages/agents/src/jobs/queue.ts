@@ -11,7 +11,7 @@ export interface EnqueueParams {
   companyId: string;
   agentType: AgentType;
   triggerType: AgentTrigger;
-  /** true → skip bila sudah ada job PENDING sama hari ini */
+  /** Skips creation when an equivalent pending job already exists today. */
   dedupe?: boolean;
 }
 
@@ -45,8 +45,8 @@ export async function enqueueAgentJob(
 }
 
 /**
- * Klaim job PENDING dengan advisory lock (FOR UPDATE SKIP LOCKED)
- * sehingga dua worker serverless tidak memproses job yang sama.
+ * Claims pending jobs with FOR UPDATE SKIP LOCKED so concurrent serverless
+ * workers cannot process the same job.
  */
 export async function claimPendingJobs(
   prisma: PrismaClient,

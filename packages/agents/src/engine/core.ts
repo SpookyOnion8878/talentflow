@@ -16,6 +16,7 @@ import { evaluateGuard } from "../guards/pipeline";
 import { fetchAgentConfig } from "../config";
 
 export interface RunMeta {
+  id?: string;
   companyId: string;
   agentType: AgentType;
   triggerType: AgentTrigger;
@@ -29,6 +30,7 @@ export async function startRun(
 ): Promise<AgentRun> {
   return prisma.agentRun.create({
     data: {
+      id: meta.id,
       companyId: meta.companyId,
       agentType: meta.agentType,
       triggerType: meta.triggerType,
@@ -63,7 +65,7 @@ export async function endRun(
   });
 }
 
-/** Cek token budget bulanan perusahaan (per agentType). */
+/** Checks the current monthly token budget for one company and agent type. */
 export async function checkTokenBudget(
   prisma: PrismaClient,
   companyId: string,
@@ -119,6 +121,7 @@ export interface AttachOptions {
   input: unknown;
   index?: number;
   actorRole?: ToolContext["actorRole"];
+  triggeredBy?: string | null;
   steps?: StepRecord[];
 }
 
@@ -129,10 +132,7 @@ export interface AttachResult {
   deniedReason?: string;
 }
 
-/**
- * Jantung engine: berlakukan guard lalu simpan AgentAction.
- * Mode AUTO langsung dieksekusi; mode PROPOSE menunggu approval queue.
- */
+/** Applies guardrails, persists the action, and executes automatic actions. */
 export async function attachToolAction(
   opts: AttachOptions,
 ): Promise<AttachResult> {
@@ -158,6 +158,7 @@ export async function attachToolAction(
     companyId: opts.companyId,
     prisma: opts.prisma,
     actorRole: opts.actorRole ?? "SYSTEM",
+    triggeredBy: opts.triggeredBy,
   };
 
   const guard = await evaluateGuard({
@@ -177,7 +178,7 @@ export async function attachToolAction(
     return { deniedReason: guard.reason };
   }
 
-  const action = await createActionSafe(opts, guard);
+  const action = await createActionSafe(opts, guard, input);
 
   if (!action) {
     opts.steps?.push({
@@ -224,21 +225,18 @@ export async function attachToolAction(
   return { action, executed: false };
 }
 
-/**
- * Simpan AgentAction dengan race-safe anti-duplikat. Cek idempotency di
- * guard menangani kasus sekuensial; di sini base unique index
- * (tool, idempotency_key) menangkap kasus konkuren — P2002 ditolak.
- */
+/** Persists an action while treating a unique-key race as a denied duplicate. */
 async function createActionSafe(
   opts: AttachOptions,
   guard: { mode: AgentActionMode; idempotencyKey?: string | null },
+  input: unknown,
 ): Promise<AgentAction | null> {
   try {
     return await opts.prisma.agentAction.create({
       data: {
         runId: opts.runId,
         tool: opts.tool.name,
-        input: opts.input as Prisma.InputJsonValue,
+        input: input as Prisma.InputJsonValue,
         mode: guard.mode,
         status: "PENDING",
         idempotencyKey: guard.idempotencyKey ?? null,
@@ -280,10 +278,16 @@ export async function executeToolAction(
     });
     await writeAudit(prisma, {
       companyId: ctx.companyId,
+      userId: ctx.triggeredBy,
       action: `AGENT_${tool.name.toUpperCase()}`,
       entity: "AgentAction",
       entityId: action.id,
-      metadata: { runId: action.runId, actor: mode, actorType: "AGENT" },
+      metadata: {
+        runId: action.runId,
+        actor: mode,
+        actorRole: ctx.actorRole ?? null,
+        actorType: ctx.isApproval ? "USER_APPROVAL" : "AGENT",
+      },
     });
     return { ok: true, output };
   } catch (err) {
@@ -294,10 +298,16 @@ export async function executeToolAction(
     });
     await writeAudit(prisma, {
       companyId: ctx.companyId,
+      userId: ctx.triggeredBy,
       action: `AGENT_${tool.name.toUpperCase()}_FAILED`,
       entity: "AgentAction",
       entityId: action.id,
-      metadata: { runId: action.runId, error: message, actorType: "AGENT" },
+      metadata: {
+        runId: action.runId,
+        error: message,
+        actorRole: ctx.actorRole ?? null,
+        actorType: ctx.isApproval ? "USER_APPROVAL" : "AGENT",
+      },
     });
     return { ok: false, error: message };
   }

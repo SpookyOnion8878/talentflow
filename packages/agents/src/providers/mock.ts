@@ -1,7 +1,7 @@
 import type { ChatResult, ModelProvider } from "./types";
 import { EMBEDDING_DIM } from "./gemini";
 
-/** Hash deterministik per token kata untuk Mock embedding. */
+/** Creates a deterministic hash for each mock-embedding word token. */
 function hashWord(word: string): number {
   let h = 2166136261;
   for (let i = 0; i < word.length; i++) {
@@ -12,9 +12,8 @@ function hashWord(word: string): number {
 }
 
 /**
- * Provider tanpa jaringan, dipakai untuk unit test & smoke test lokal.
- * Script: deret respons; jika baris adalah {tool, args} maka engine akan
- * memanggil tool tersebut, lalu provider menjawab teks final.
+ * Network-free provider for unit tests and local smoke tests.
+ * Each scripted tool response is executed before the provider returns final text.
  */
 export class MockProvider implements ModelProvider {
   readonly name = "mock";
@@ -24,7 +23,7 @@ export class MockProvider implements ModelProvider {
   async chat(): Promise<ChatResult> {
     const next = this.script.shift();
     if (!next) {
-      throw new Error("MockProvider: script habis");
+      throw new Error("MockProvider: scripted responses are exhausted");
     }
     return next;
   }

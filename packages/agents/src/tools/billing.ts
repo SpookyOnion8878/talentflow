@@ -1,9 +1,14 @@
 import { z } from "zod";
-import { Prisma } from "@repo/db";
+import {
+  DEFAULT_INVOICE_TAX_RATE,
+  Prisma,
+  calculateInvoiceAmounts,
+  decimalToNumber,
+} from "@repo/db";
 import type { ToolContext, ToolDef } from "../types";
 import { sendAgentEmail } from "../email";
 
-// ─── Perhitungan deterministik (LLM tidak pernah menghitung) ────────
+// Deterministic calculations; the model never calculates invoice totals.
 
 export interface InvoiceMathInput {
   hours: number;
@@ -23,19 +28,27 @@ export interface InvoiceMath {
 export function calcInvoice(
   input: InvoiceMathInput & { currency: string },
 ): InvoiceMath {
-  const amount = Math.round(input.hours * input.ratePerHour * 100) / 100;
-  const tax = Math.round(amount * (input.taxRate ?? 0) * 100) / 100;
+  const calculated = calculateInvoiceAmounts(
+    [
+      {
+        description: "Calculated work",
+        quantity: input.hours,
+        rate: input.ratePerHour,
+      },
+    ],
+    input.taxRate ?? 0,
+  );
   return {
     hours: input.hours,
     rate: input.ratePerHour,
-    amount,
-    tax,
-    total: Math.round((amount + tax) * 100) / 100,
+    amount: decimalToNumber(calculated.subtotal),
+    tax: decimalToNumber(calculated.tax),
+    total: decimalToNumber(calculated.total),
     currency: input.currency,
   };
 }
 
-/** Nomor invoice deterministik: INV-<year>-<counter> */
+/** Builds a deterministic invoice number: INV-<year>-<counter>. */
 export function buildInvoiceNo(year: number, counter: number): string {
   return `INV-${year}-${String(counter).padStart(3, "0")}`;
 }
@@ -51,7 +64,7 @@ export async function nextInvoiceNo(
   return buildInvoiceNo(year, count + 1);
 }
 
-// ─── Tool definitions ──────────────────────────────────────────────
+// Tool definitions
 
 const periodSchema = z.object({
   periodStart: z.string(),
@@ -63,13 +76,19 @@ const invoiceDraftSchema = z.object({
   contractId: z.string().optional(),
   periodStart: z.string(),
   periodEnd: z.string(),
-  hours: z.number().min(0),
+  hours: z.number().positive(),
   rate: z.number().min(0),
-  amount: z.number().min(0),
-  taxAmount: z.number().min(0).optional(),
-  totalAmount: z.number().min(0),
+  taxRate: z.number().min(0).max(1).optional(),
   currency: z.string(),
-  items: z.array(z.record(z.string(), z.any())).optional(),
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1),
+        quantity: z.number().positive(),
+        rate: z.number().min(0),
+      }),
+    )
+    .min(1),
   notes: z.string().optional(),
 });
 
@@ -81,6 +100,7 @@ export const billingTools: ToolDef[] = [
     inputSchema: periodSchema as z.ZodType<unknown>,
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    readOnly: true,
     execute: async (ctx, input) => {
       const p = input as z.infer<typeof periodSchema>;
       const rows = await ctx.prisma.timesheet.findMany({
@@ -121,8 +141,16 @@ export const billingTools: ToolDef[] = [
     inputSchema: invoiceDraftSchema as z.ZodType<unknown>,
     defaultMode: "PROPOSE",
     permission: ["SYSTEM", "OWNER", "ADMIN", "FINANCE"],
-    monetary: (input) =>
-      (input as z.infer<typeof invoiceDraftSchema>).amount ?? null,
+    approvalPermission: ["OWNER", "ADMIN", "FINANCE"],
+    monetary: (input) => {
+      const invoice = input as z.infer<typeof invoiceDraftSchema>;
+      return decimalToNumber(
+        calculateInvoiceAmounts(
+          invoice.items,
+          invoice.taxRate ?? DEFAULT_INVOICE_TAX_RATE,
+        ).total,
+      );
+    },
     idempotencyKey: (ctx, input) => {
       const i = input as z.infer<typeof invoiceDraftSchema>;
       return Promise.resolve(
@@ -131,27 +159,75 @@ export const billingTools: ToolDef[] = [
     },
     execute: async (ctx, input) => {
       const i = input as z.infer<typeof invoiceDraftSchema>;
+      const freelancer = await ctx.prisma.freelancer.findFirst({
+        where: { id: i.freelancerId, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!freelancer) {
+        throw new Error(`Freelancer ${i.freelancerId} not found`);
+      }
+      if (i.contractId) {
+        const contract = await ctx.prisma.contract.findFirst({
+          where: {
+            id: i.contractId,
+            companyId: ctx.companyId,
+            freelancerId: i.freelancerId,
+          },
+          select: { id: true, currency: true },
+        });
+        if (!contract) {
+          throw new Error(
+            `Contract ${i.contractId} is not valid for freelancer ${i.freelancerId}`,
+          );
+        }
+        if (contract.currency !== i.currency) {
+          throw new Error("Invoice currency must match the contract currency");
+        }
+      }
+      const calculated = calculateInvoiceAmounts(
+        i.items,
+        i.taxRate ?? DEFAULT_INVOICE_TAX_RATE,
+      );
       const invoiceNo = await nextInvoiceNo(ctx, input);
-      const invoice = await ctx.prisma.invoice.create({
-        data: {
-          invoiceNo,
-          companyId: ctx.companyId,
-          freelancerId: i.freelancerId,
-          contractId: i.contractId ?? null,
-          amount: i.amount,
-          taxAmount: i.taxAmount ?? 0,
-          totalAmount: i.totalAmount,
-          currency: i.currency ?? "USD",
-          status: "DRAFT",
-          dueDate: new Date(Date.now() + 14 * 86400000),
-          items: (i.items ?? []) as unknown as Prisma.InputJsonValue,
-          notes: i.notes,
-        },
+      const invoice = await ctx.prisma.$transaction(async (transaction) => {
+        const created = await transaction.invoice.create({
+          data: {
+            invoiceNo,
+            companyId: ctx.companyId,
+            freelancerId: i.freelancerId,
+            contractId: i.contractId ?? null,
+            amount: calculated.subtotal,
+            taxAmount: calculated.tax,
+            totalAmount: calculated.total,
+            taxRate: calculated.taxRate,
+            calculationVersion: calculated.calculationVersion,
+            currency: i.currency,
+            status: "DRAFT",
+            dueDate: new Date(Date.now() + 14 * 86400000),
+            items: calculated.lines as unknown as Prisma.InputJsonValue,
+            notes: i.notes,
+          },
+        });
+        await transaction.auditLog.create({
+          data: {
+            companyId: ctx.companyId,
+            userId: ctx.triggeredBy ?? null,
+            action: "INVOICE_CREATED_BY_AGENT",
+            entity: "Invoice",
+            entityId: created.id,
+            metadata: {
+              invoiceNo: created.invoiceNo,
+              amount: created.totalAmount.toFixed(4),
+              calculationVersion: created.calculationVersion,
+            },
+          },
+        });
+        return created;
       });
       return {
         invoiceId: invoice.id,
         invoiceNo,
-        totalAmount: i.totalAmount,
+        totalAmount: decimalToNumber(invoice.totalAmount),
       };
     },
   },
@@ -162,6 +238,7 @@ export const billingTools: ToolDef[] = [
     inputSchema: z.object({}),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    readOnly: true,
     execute: async (ctx) => {
       const rows = await ctx.prisma.invoice.findMany({
         where: {
@@ -193,6 +270,7 @@ export const billingTools: ToolDef[] = [
     }),
     defaultMode: "AUTO",
     permission: ["SYSTEM", "OWNER", "ADMIN", "FINANCE"],
+    approvalPermission: ["OWNER", "ADMIN"],
     idempotencyKey: (ctx, input) => {
       const i = input as { invoiceId: string; tier: number };
       return Promise.resolve(
@@ -249,6 +327,7 @@ export const billingTools: ToolDef[] = [
     inputSchema: z.object({}),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    readOnly: true,
     execute: async (ctx) => {
       const now = Date.now();
       const rows = await ctx.prisma.invoice.findMany({
@@ -278,38 +357,59 @@ export const billingTools: ToolDef[] = [
     inputSchema: z.object({}),
     defaultMode: "AUTO",
     permission: ["SYSTEM"],
+    approvalPermission: ["OWNER", "ADMIN"],
     idempotencyKey: (ctx) =>
       Promise.resolve(`${ctx.companyId}:weekly-summary:${weekKey()}`),
     execute: async (ctx) => {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const [unpaid, overdue, drafts, expiring] = await Promise.all([
-        ctx.prisma.invoice.findMany({
-          where: {
-            companyId: ctx.companyId,
-            status: { in: ["SENT", "VIEWED", "OVERDUE"] },
-          },
-          select: { totalAmount: true, currency: true },
-        }),
-        ctx.prisma.invoice.count({
-          where: { companyId: ctx.companyId, status: "OVERDUE" },
-        }),
-        ctx.prisma.invoice.count({
-          where: { companyId: ctx.companyId, status: "DRAFT" },
-        }),
-        ctx.prisma.complianceRecord.count({
-          where: {
-            freelancer: { companyId: ctx.companyId },
-            status: "VERIFIED",
-            expiryDate: {
-              lte: new Date(Date.now() + 30 * 86400000),
-              gte: new Date(),
+      const [unpaid, unpaidCount, overdue, drafts, expiring] =
+        await Promise.all([
+          ctx.prisma.invoice.groupBy({
+            by: ["currency"],
+            where: {
+              companyId: ctx.companyId,
+              status: { in: ["SENT", "VIEWED", "OVERDUE"] },
             },
-          },
-        }),
-      ]);
-      const totalOutstanding = unpaid.reduce((s, u) => s + u.totalAmount, 0);
-      const currency = unpaid[0]?.currency ?? "USD";
+            _sum: { totalAmount: true },
+          }),
+          ctx.prisma.invoice.count({
+            where: {
+              companyId: ctx.companyId,
+              status: { in: ["SENT", "VIEWED", "OVERDUE"] },
+            },
+          }),
+          ctx.prisma.invoice.count({
+            where: { companyId: ctx.companyId, status: "OVERDUE" },
+          }),
+          ctx.prisma.invoice.count({
+            where: { companyId: ctx.companyId, status: "DRAFT" },
+          }),
+          ctx.prisma.complianceRecord.count({
+            where: {
+              freelancer: { companyId: ctx.companyId },
+              status: "VERIFIED",
+              expiryDate: {
+                lte: new Date(Date.now() + 30 * 86400000),
+                gte: new Date(),
+              },
+            },
+          }),
+        ]);
+      const totalsByCurrency = Object.fromEntries(
+        unpaid.map((group) => [
+          group.currency,
+          decimalToNumber(group._sum.totalAmount ?? 0),
+        ]),
+      );
+      const outstandingLabel = Object.entries(totalsByCurrency)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(
+          ([currency, amount]) =>
+            `${currency} ${amount.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 4,
+            })}`,
+        )
+        .join("; ");
 
       const sent = await sendAgentEmail({
         ctx,
@@ -317,8 +417,8 @@ export const billingTools: ToolDef[] = [
         subject: `Weekly summary — ${weekKey()}`,
         props: {
           companyName: "TalentFlow",
-          totalOutstanding: `${currency} ${totalOutstanding.toLocaleString("en-US")}`,
-          unpaidCount: unpaid.length,
+          totalOutstanding: outstandingLabel || "No outstanding invoices",
+          unpaidCount,
           overdueCount: overdue,
           expiringCount: expiring,
           draftCount: drafts,
@@ -327,8 +427,8 @@ export const billingTools: ToolDef[] = [
       });
       return {
         status: "sent",
-        totalOutstanding,
-        unpaidCount: unpaid.length,
+        totalsByCurrency,
+        unpaidCount,
         channel: sent.channel,
       };
     },

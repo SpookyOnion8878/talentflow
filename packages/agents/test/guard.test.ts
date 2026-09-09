@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { evaluateGuard } from "../src/guards/pipeline";
+import { canApproveTool, evaluateGuard } from "../src/guards/pipeline";
 import type { ToolDef } from "../src/types";
 import { z } from "zod";
 
@@ -42,7 +42,7 @@ const baseConfig: any = {
 };
 
 describe("evaluateGuard", () => {
-  it("tolak jika agent dinonaktifkan", async () => {
+  it("rejects actions when the agent is disabled", async () => {
     const res = await evaluateGuard({
       tool: REMINDER_TOOL,
       ctx: makeCtx(),
@@ -53,7 +53,7 @@ describe("evaluateGuard", () => {
     expect(res.reason).toContain("is disabled");
   });
 
-  it("aks finansial > threshold dipaksa PROPOSE walau tool ber-AUTO", async () => {
+  it("forces monetary actions above the threshold to PROPOSE", async () => {
     const res = await evaluateGuard({
       tool: FINANCIAL_TOOL,
       ctx: makeCtx(),
@@ -64,7 +64,7 @@ describe("evaluateGuard", () => {
     expect(res.mode).toBe("PROPOSE");
   });
 
-  it("aks finansial di bawah threshold tetap PROPOSE (default)", async () => {
+  it("keeps monetary actions below the threshold in the company mode", async () => {
     const res = await evaluateGuard({
       tool: FINANCIAL_TOOL,
       ctx: makeCtx(),
@@ -74,9 +74,27 @@ describe("evaluateGuard", () => {
     expect(res.mode).toBe("PROPOSE");
   });
 
-  it("tool non-finansial AUTO tetap AUTO", async () => {
+  it("uses the company-wide mode for mutating tools", async () => {
     const res = await evaluateGuard({
       tool: REMINDER_TOOL,
+      ctx: makeCtx(),
+      input: {},
+      config: baseConfig,
+    });
+    expect(res.mode).toBe("PROPOSE");
+
+    const automatic = await evaluateGuard({
+      tool: REMINDER_TOOL,
+      ctx: makeCtx(),
+      input: {},
+      config: { ...baseConfig, mode: "AUTO" },
+    });
+    expect(automatic.mode).toBe("AUTO");
+  });
+
+  it("keeps read-only tools automatic regardless of company mode", async () => {
+    const res = await evaluateGuard({
+      tool: { ...REMINDER_TOOL, readOnly: true },
       ctx: makeCtx(),
       input: {},
       config: baseConfig,
@@ -84,7 +102,25 @@ describe("evaluateGuard", () => {
     expect(res.mode).toBe("AUTO");
   });
 
-  it("deteksi aksi duplikat via idempotency key", async () => {
+  it("uses explicit human approval permissions instead of SYSTEM rights", async () => {
+    expect(canApproveTool(REMINDER_TOOL, "OWNER")).toBe(false);
+    const tool = {
+      ...REMINDER_TOOL,
+      approvalPermission: ["OWNER"] as const,
+    } satisfies ToolDef;
+    expect(canApproveTool(tool, "OWNER")).toBe(true);
+    expect(canApproveTool(tool, "FINANCE")).toBe(false);
+
+    const denied = await evaluateGuard({
+      tool,
+      ctx: makeCtx({ actorRole: "FINANCE", isApproval: true }),
+      input: {},
+      config: baseConfig,
+    });
+    expect(denied.allowed).toBe(false);
+  });
+
+  it("detects an already executed idempotency key", async () => {
     const ctx = makeCtx();
     ctx.prisma.agentAction.findFirst.mockResolvedValueOnce({ id: "x" });
 

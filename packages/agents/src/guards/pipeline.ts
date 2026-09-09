@@ -1,5 +1,5 @@
 import type { PrismaClient, AgentConfig } from "@repo/db";
-import type { GuardResult, ToolContext, ToolDef } from "../types";
+import type { GuardResult, Role, ToolContext, ToolDef } from "../types";
 
 export interface EvaluateOptions {
   tool: ToolDef;
@@ -8,11 +8,13 @@ export interface EvaluateOptions {
   config: AgentConfig | null;
 }
 
-const EXECUTED_STATUSES = ["AUTO_EXECUTED", "APPROVED"] as const;
+export function canApproveTool(tool: ToolDef, role: Role): boolean {
+  return tool.approvalPermission?.includes(role) ?? false;
+}
 
 /**
- * Guard pipeline: entitlement → permission → mode (propose/auto) →
- * budget threshold → idempotency. Terbalik-satu → tolak.
+ * Evaluates enablement, actor permission, execution mode, monetary threshold,
+ * and idempotency before a tool action can be created or executed.
  */
 export async function evaluateGuard({
   tool,
@@ -24,8 +26,13 @@ export async function evaluateGuard({
     return { allowed: false, reason: "agent is disabled", mode: "PROPOSE" };
   }
 
-  // 1. Permission: hanya untuk aksi yang dipicu pengguna (acton as user).
-  if (ctx.actorRole && !tool.permission.includes(ctx.actorRole)) {
+  // Approval permissions are intentionally distinct from automation rights.
+  const roleAllowed = ctx.actorRole
+    ? ctx.isApproval
+      ? canApproveTool(tool, ctx.actorRole)
+      : tool.permission.includes(ctx.actorRole)
+    : true;
+  if (!roleAllowed) {
     return {
       allowed: false,
       reason: `role ${ctx.actorRole} is not allowed to call tool ${tool.name}`,
@@ -33,16 +40,16 @@ export async function evaluateGuard({
     };
   }
 
-  // 2. Mode akhir = default tool, di-override konfigurasi per-tool.
-  let mode = tool.defaultMode;
+  // Read-only tools stay automatic; mutating tools inherit the company mode.
+  let mode = tool.readOnly ? "AUTO" : config.mode;
   const override = (config.toolOverrides as Record<string, string> | null)?.[
     tool.name
   ];
-  if (override === "AUTO" || override === "PROPOSE") {
+  if (!tool.readOnly && (override === "AUTO" || override === "PROPOSE")) {
     mode = override;
   }
 
-  // 3. Guard finansial: berapa pun config, melewati threshold → dipaksa PROPOSE.
+  // Monetary actions above the configured threshold always require approval.
   const amount = tool.monetary?.(input) ?? null;
   if (
     amount != null &&
@@ -52,7 +59,7 @@ export async function evaluateGuard({
     mode = "PROPOSE";
   }
 
-  // 4. Idempotensi: kunci unik per aksi, dicek terhadap aksi sebelumnya.
+  // Idempotency rejects a key that has already been executed successfully.
   if (tool.idempotencyKey) {
     const key = await tool.idempotencyKey(ctx, input);
     if (key) {
@@ -60,14 +67,13 @@ export async function evaluateGuard({
         where: {
           tool: tool.name,
           idempotencyKey: key,
-          status: { in: [...EXECUTED_STATUSES] },
         },
         select: { id: true },
       });
       if (existing) {
         return {
           allowed: false,
-          reason: `duplicate action (${key}) already executed before`,
+          reason: `duplicate action (${key}) already exists`,
           mode,
         };
       }

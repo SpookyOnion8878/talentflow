@@ -2,7 +2,7 @@ import type { PrismaClient } from "@repo/db";
 import { renderAgentEmail, sendEmail } from "@repo/email";
 import type { ToolContext } from "./types";
 
-/** Daftar email aktor (OWNER/ADMIN/FINANCE) perusahaan yang menerima notifikasi email. */
+/** Lists active owner, administrator, and finance email recipients. */
 export async function emailRecipients(
   prisma: PrismaClient,
   companyId: string,
@@ -25,7 +25,7 @@ interface SendAgentEmailParams {
   props: unknown;
 }
 
-/** Render template react-email lalu kirim ke pihak terkait perusahaan. */
+/** Renders an email template and sends it to the relevant company recipients. */
 export async function sendAgentEmail(
   params: SendAgentEmailParams,
 ): Promise<{ channel: "resend" | "console" | "skip"; to: string[] }> {

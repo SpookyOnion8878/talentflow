@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 /**
- * Konversi skema Zod sederhana ke JSON Schema (untuk function declaration
- * provider LLM). Mendukung object, string, number, boolean, array, enum.
+ * Converts a simple Zod schema to JSON Schema for LLM function declarations.
+ * Supports objects, strings, numbers, booleans, arrays, and enums.
  */
 export function zodToJsonSchema(
   schema: z.ZodType<unknown>,
