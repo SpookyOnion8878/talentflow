@@ -2,7 +2,7 @@
 
 > **Freelancer & Contractor Management Platform** — End-to-end lifecycle management for modern companies.
 
-[![CI/CD](https://github.com/yourusername/talentflow/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/talentflow/actions)
+[![CI/CD](https://github.com/SpookyOnion8878/talentflow/actions/workflows/ci.yml/badge.svg)](https://github.com/SpookyOnion8878/talentflow/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed-Vercel-black)](https://talentflow.vercel.app)
 
@@ -45,7 +45,7 @@ TalentFlow is a B2B SaaS platform that helps companies manage their entire freel
 A unified platform with:
 
 - **Centralized freelancer database** with skills, ratings, and compliance records
-- **Smart contract engine** with templates, e-signatures, and versioning
+- **Contract engine** with lifecycle management and enforced state transitions
 - **Automated timesheets** with approval workflows and real-time budget tracking
 - **Auto-generated invoices** from approved hours with multi-currency support
 - **Compliance dashboard** with auto-expiry alerts and verification workflows
@@ -69,25 +69,27 @@ A unified platform with:
 
 ## Features
 
-### Core Features
+### Core Features (implemented)
 
-- **Freelancer Management** — CRUD, skills, ratings, bank info, tax details
+- **Freelancer Management** — CRUD, skills, ratings; financial PII (bank/tax) redacted per role
 - **Project Management** — Create projects, assign freelancers, track budgets
-- **Smart Contracts** — Template-based generation, e-signatures, version history
-- **Time Tracking** — Daily timesheet submission, manager approval workflow
-- **Auto Invoicing** — Generate from approved timesheets, multi-currency (USD, EUR, IDR)
-- **Payment Tracking** — Record payments via bank transfer, Stripe, PayPal, Wise
-- **Compliance Engine** — Document tracking (ID, tax, visa, NDA), auto-expiry alerts
-- **Audit Trail** — Immutable log of all actions with timestamps and actors
+- **Contracts** — Full lifecycle (draft → sent → signed → active → completed/terminated) with enforced state transitions and internal sign-off (no external e-signature yet)
+- **Time Tracking** — Daily timesheet submission, manager approval workflow (one entry per freelancer per day)
+- **Invoicing** — Draft invoices with Decimal-accurate totals and an enforced status machine (DRAFT → SENT → VIEWED/OVERDUE → PAID/CANCELLED)
+- **Payment Tracking** — Partial payments with overpayment protection and auto-settlement (bank transfer / PayPal / Wise / other — no payment-gateway integration yet)
+- **Compliance Engine** — Document tracking (ID, tax, visa, NDA), agent-driven expiry scan with reminders
+- **Audit Trail** — Append-only log written in the same database transaction as the change
 
-### Advanced Features
+### Advanced Features (implemented)
 
-- **Budget Forecasting** — Predict spend based on burn rate and projected hours
-- **Role-Based Access Control** — Owner, Admin, Manager, Finance, Viewer roles
-- **Real-time Notifications** — WebSocket alerts for approvals, payments, expiry
-- **Analytics Dashboard** — Spending trends, utilization rates, invoice aging
-- **Export Reports** — PDF and CSV export for financial and compliance reports
-- **Multi-currency** — Auto-conversion with exchange rate integration
+- **Role-Based Access Control** — Owner, Admin, Manager, Finance, Viewer; enforced per tRPC procedure, not just in the UI
+- **Notifications** — In-app notification center (60-second polling; no WebSocket)
+- **Dashboard & Reports** — Spend / outstanding summaries per currency, budget overview, invoice aging
+- **Multi-currency records** — Currency consistency enforced per contract/invoice (no automatic exchange-rate conversion)
+
+### Planned (not built yet)
+
+PDF/CSV export · Stripe integration · external e-signature flow · freelancer self-service portal · email verification · member email invitations
 
 ### AI Agents (AgentOps)
 
@@ -110,20 +112,18 @@ Docs: [`docs/agents/`](docs/agents/00-README.md) (PRD, architecture, ERD, roadma
 | Layer              | Technology                        | Cost           |
 | ------------------ | --------------------------------- | -------------- |
 | **Monorepo**       | Turborepo                         | Free           |
-| **Frontend**       | Next.js 14 (App Router)           | Free           |
+| **Frontend**       | Next.js 16 (App Router)           | Free           |
 | **Styling**        | Tailwind CSS + Custom Components  | Free           |
 | **Backend API**    | tRPC (type-safe)                  | Free           |
-| **Database**       | PostgreSQL (via Supabase)         | Free tier      |
+| **Database**       | PostgreSQL + pgvector             | Free tier      |
 | **ORM**            | Prisma                            | Free           |
 | **Authentication** | NextAuth.js (OAuth + Credentials) | Free           |
 | **Email**          | Resend (React Email)              | Free (3000/mo) |
-| **File Storage**   | Supabase Storage                  | Free (1GB)     |
-| **Payments**       | Stripe (test mode)                | Free (test)    |
 | **Validation**     | Zod                               | Free           |
 | **CI/CD**          | GitHub Actions                    | Free           |
 | **Hosting**        | Vercel                            | Free (hobby)   |
-| **Documentation**  | Next.js (custom docs)             | Free           |
-| **Testing**        | Vitest + Playwright               | Free           |
+| **Documentation**  | Markdown (`docs/`)                | Free           |
+| **Testing**        | Vitest                            | Free           |
 | **Linting**        | ESLint + Prettier + Husky         | Free           |
 | **AI Agents**      | Gemini / Ollama / mock + pgvector | Free ($0 tier) |
 
@@ -145,8 +145,8 @@ Docs: [`docs/agents/`](docs/agents/00-README.md) (PRD, architecture, ERD, roadma
 │                    DATA ACCESS (Prisma ORM)                     │
 │  Connection pooling │ Migrations │ Type generation              │
 ├─────────────────────────────────────────────────────────────────┤
-│                    PostgreSQL (Supabase)                         │
-│  Primary database │ Realtime subscriptions │ File storage       │
+│                  PostgreSQL (+ pgvector for RAG)                 │
+│  Primary database │ Agent job queue │ Vector search             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -155,7 +155,7 @@ Docs: [`docs/agents/`](docs/agents/00-README.md) (PRD, architecture, ERD, roadma
 ```
 talentflow/
 ├── apps/
-│   ├── web/                    # Next.js 14 App (Frontend + tRPC API)
+│   ├── web/                    # Next.js 16 App (Frontend + tRPC API)
 │   │   ├── app/
 │   │   │   ├── (auth)/         # Login, Register pages
 │   │   │   ├── (dashboard)/    # Dashboard with sidebar layout
@@ -171,13 +171,14 @@ talentflow/
 │   │   │   │   └── settings/           # Account & team settings
 │   │   │   └── api/trpc/       # tRPC API handler
 │   │   └── lib/trpc/routers/   # tRPC router definitions
-│   └── docs/                   # Documentation site
+│   └── docs/                   # Documentation site (scaffold, not built out)
 ├── packages/
 │   ├── db/                     # Prisma schema + client
 │   ├── ui/                     # Shared UI components
 │   ├── validators/             # Zod validation schemas
 │   ├── utils/                  # Shared utility functions
 │   ├── email/                  # React Email templates
+│   ├── agents/                 # AgentOps engine (ReAct loop, queue, tools, RAG)
 │   ├── eslint-config/          # Shared ESLint config
 │   └── typescript-config/      # Shared TypeScript config
 ├── .github/workflows/          # CI/CD pipelines
@@ -265,6 +266,9 @@ Additional Entities:
 
 ## Use Cases
 
+> Status: UC-01 – UC-09 and UC-19/UC-20 are implemented. UC-10 (export), UC-11 (subscription),
+> UC-17/UC-18 (email reminders, per-country tax) and the whole freelancer portal (UC-12 – UC-16) are planned.
+
 ### Actor: Company Admin
 
 | ID    | Use Case            | Priority | Description                                                           |
@@ -303,6 +307,10 @@ Additional Entities:
 ---
 
 ## Workflows
+
+> The flows below are the target design. Implemented today: timesheet approval, the invoice
+> lifecycle, payment settlement with auto-settle, and the agent billing/compliance cycles.
+> Email-touching steps and freelancer-portal steps are not built yet.
 
 ### 1. Freelancer Onboarding Flow
 
@@ -408,7 +416,7 @@ docker exec -i tf-pg psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EX
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/talentflow.git
+git clone https://github.com/SpookyOnion8878/talentflow.git
 cd talentflow
 pnpm install
 ```
@@ -453,17 +461,6 @@ pnpm --filter @repo/agents smoke
 # Dashboard → Agent Config → "Reindex embeddings"
 ```
 
-### 4. Start Development
-
-```bash
-# Start all apps and packages
-pnpm dev
-
-# Or start specific apps
-pnpm --filter @repo/web dev     # Web app on :3000
-pnpm --filter @repo/docs dev    # Docs on :3001
-```
-
 ### 5. Start Development
 
 ```bash
@@ -472,7 +469,7 @@ pnpm dev
 
 # Or start specific apps
 pnpm --filter @repo/web dev     # Web app on :3000
-pnpm --filter @repo/docs dev    # Docs on :3001
+pnpm --filter @repo/docs dev    # Docs on :3001 (scaffold)
 ```
 
 ### 6. Access the App
@@ -506,6 +503,7 @@ pnpm --filter @repo/docs dev    # Docs on :3001
 ## API Reference
 
 All API endpoints are defined as tRPC routers with full type safety.
+(Complete list: `apps/web/lib/trpc/routers/` — the table below shows the core domain only.)
 
 ### Available Routers
 
@@ -520,14 +518,14 @@ All API endpoints are defined as tRPC routers with full type safety.
 | `project`    | `create`     | mutation | Create new project                    |
 | `contract`   | `list`       | query    | List all contracts                    |
 | `contract`   | `create`     | mutation | Generate new contract                 |
-| `contract`   | `sign`       | mutation | Record e-signature                    |
+| `contract`   | `sign`       | mutation | Record internal sign-off              |
 | `timesheet`  | `list`       | query    | List timesheets with status filter    |
 | `timesheet`  | `submit`     | mutation | Submit new timesheet                  |
 | `timesheet`  | `approve`    | mutation | Approve pending timesheet             |
 | `timesheet`  | `reject`     | mutation | Reject with reason                    |
 | `invoice`    | `list`       | query    | List all invoices                     |
-| `invoice`    | `create`     | mutation | Generate invoice from timesheets      |
-| `invoice`    | `markAsPaid` | mutation | Record payment                        |
+| `invoice`    | `create`     | mutation | Create draft invoice (validated math) |
+| `invoice`    | `markAsPaid` | mutation | Settle outstanding balance            |
 
 ---
 
@@ -554,7 +552,6 @@ NEXTAUTH_URL=https://talentflow.vercel.app
 NEXTAUTH_SECRET=<generated-secret>
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-STRIPE_SECRET_KEY=sk_live_...
 RESEND_API_KEY=re_...
 NEXT_PUBLIC_APP_URL=https://talentflow.vercel.app
 # AI Agents — production (fall back to mock provider when unset)
@@ -608,53 +605,21 @@ test: add timesheet approval tests
 
 ---
 
-## Roadmap
+## Roadmap — Current Status
 
-### Phase 1 (Weeks 1-2) — Foundation
+- [x] Monorepo (Turborepo), Prisma schema + versioned migrations, pgvector
+- [x] Authentication (NextAuth: credentials + Google/GitHub OAuth), RBAC 5 roles
+- [x] Freelancer / Project / Contract / Timesheet / Invoice / Payment / Compliance modules
+- [x] Money engine (Decimal 19,4), enforced state machines, concurrency-safe settlements
+- [x] Audit trail (transactional), notification center (polling)
+- [x] AgentOps engine: ReAct loop, guardrails, approval queue, billing/compliance agents, RAG copilot, cron
+- [ ] Email on invoice send / reminders (infrastructure exists, not wired to user flows)
+- [ ] Export reports (PDF/CSV) · Stripe · external e-signature
+- [ ] Freelancer portal · email verification · member email invitations
+- [ ] Router-level integration tests + Postgres service in CI
 
-- [x] Monorepo setup with Turborepo
-- [x] Prisma schema with full ERD
-- [x] Authentication (NextAuth + OAuth)
-- [x] Dashboard layout with sidebar
-- [x] Freelancer CRUD pages
-
-### Phase 2 (Weeks 3-4) — Core Workflows
-
-- [ ] Contract engine with templates
-- [ ] Timesheet submission & approval
-- [ ] tRPC API integration
-- [ ] Real-time notifications
-
-### Phase 3 (Weeks 5-6) — Finance
-
-- [ ] Auto invoice generation
-- [ ] Payment tracking
-- [ ] Budget forecasting
-- [ ] Multi-currency support
-
-### Phase 4 (Weeks 7-8) — Compliance & Analytics
-
-- [ ] Compliance document tracking
-- [ ] Auto-expiry alerts
-- [ ] Analytics dashboard
-- [ ] Export reports (PDF/CSV)
-
-### Phase 5 (Weeks 9-10) — Polish
-
-- [ ] E2E testing with Playwright
-- [ ] Documentation site
-- [ ] Landing page optimization
-- [ ] Vercel production deployment
-
-### AgentOps (AI Agents) — Done
-
-- [x] Agent engine: orchestration, tool registry, guardrails, approval queue, audit logging
-- [x] Billing & Compliance agents + AI Ops Copilot (Gemini/Ollama/mock)
-- [x] RAG pipeline with pgvector embeddings + chat retrieval
-- [x] Idempotency hardening, stress tests, cost dashboard with budget alerts
-- [x] Dashboard UI + cron endpoint + 30 unit tests + end-to-end smoke script
-
-Blueprint & roadmap: [`docs/agents/`](docs/agents/00-README.md).
+Development roadmap and priorities: [`docs/AUDIT_2026-09-09.md`](docs/AUDIT_2026-09-09.md).
+AgentOps blueprint: [`docs/agents/`](docs/agents/00-README.md).
 
 ---
 
