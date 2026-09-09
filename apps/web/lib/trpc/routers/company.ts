@@ -35,24 +35,28 @@ export const companyRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const company = await ctx.prisma.company.update({
-        where: { id: ctx.companyId },
-        data: {
-          ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.website !== undefined ? { website: input.website } : {}),
-          ...(input.industry !== undefined ? { industry: input.industry } : {}),
-          ...(input.settings !== undefined
-            ? { settings: input.settings as Prisma.InputJsonValue }
-            : {}),
-        },
-      });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "COMPANY_UPDATED",
-        entity: "Company",
-        entityId: company.id,
+      const company = await ctx.prisma.$transaction(async (transaction) => {
+        const updated = await transaction.company.update({
+          where: { id: ctx.companyId },
+          data: {
+            ...(input.name !== undefined ? { name: input.name } : {}),
+            ...(input.website !== undefined ? { website: input.website } : {}),
+            ...(input.industry !== undefined
+              ? { industry: input.industry }
+              : {}),
+            ...(input.settings !== undefined
+              ? { settings: input.settings as Prisma.InputJsonValue }
+              : {}),
+          },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "COMPANY_UPDATED",
+          entity: "Company",
+          entityId: updated.id,
+        });
+        return updated;
       });
 
       return company;

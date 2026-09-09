@@ -6,10 +6,11 @@ import type { ComplianceStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { enqueueAgentJob } from "@repo/agents";
 
-const verifierGuard = requireRole("OWNER", "ADMIN", "MANAGER");
+const verifierGuard = requireRole("OWNER", "ADMIN", "MANAGER", "FINANCE");
 
 export const complianceRouter = router({
   list: protectedProcedure
+    .use(verifierGuard)
     .input(
       z.object({
         status: z.string().optional(),
@@ -70,26 +71,29 @@ export const complianceRouter = router({
     .use(verifierGuard)
     .input(complianceSchema)
     .mutation(async ({ input, ctx }) => {
-      const freelancer = await ctx.prisma.freelancer.findFirst({
-        where: { id: input.freelancerId, companyId: ctx.companyId },
-      });
-      if (!freelancer)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Freelancer not found",
+      const record = await ctx.prisma.$transaction(async (transaction) => {
+        const freelancer = await transaction.freelancer.findFirst({
+          where: { id: input.freelancerId, companyId: ctx.companyId },
         });
+        if (!freelancer) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Freelancer not found",
+          });
+        }
 
-      const record = await ctx.prisma.complianceRecord.create({
-        data: { ...input },
-      });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "COMPLIANCE_UPLOADED",
-        entity: "ComplianceRecord",
-        entityId: record.id,
-        metadata: { type: record.type, title: record.title },
+        const created = await transaction.complianceRecord.create({
+          data: { ...input },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "COMPLIANCE_UPLOADED",
+          entity: "ComplianceRecord",
+          entityId: created.id,
+          metadata: { type: created.type, title: created.title },
+        });
+        return created;
       });
 
       try {
@@ -98,8 +102,8 @@ export const complianceRouter = router({
           agentType: "COMPLIANCE",
           triggerType: "COMPLIANCE_UPDATED",
         });
-      } catch (err) {
-        console.error("[agents] enqueue COMPLIANCE_UPDATED gagal", err);
+      } catch (error) {
+        console.error("[agents] failed to enqueue COMPLIANCE_UPDATED", error);
       }
 
       return record;
@@ -109,61 +113,95 @@ export const complianceRouter = router({
     .use(verifierGuard)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const record = await ctx.prisma.complianceRecord.findFirst({
-        where: { id: input.id, freelancer: { companyId: ctx.companyId } },
-      });
-      if (!record)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      return ctx.prisma.$transaction(async (transaction) => {
+        const record = await transaction.complianceRecord.findFirst({
+          where: { id: input.id, freelancer: { companyId: ctx.companyId } },
+        });
+        if (!record) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Record not found",
+          });
+        }
+        if (record.status !== "PENDING") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `A ${record.status.toLowerCase()} record cannot be verified`,
+          });
+        }
 
-      const updated = await ctx.prisma.complianceRecord.update({
-        where: { id: input.id },
-        data: {
-          status: "VERIFIED",
-          verifiedBy: ctx.userId,
-          verifiedAt: new Date(),
-        },
+        const claimed = await transaction.complianceRecord.updateMany({
+          where: { id: input.id, status: "PENDING" },
+          data: {
+            status: "VERIFIED",
+            verifiedBy: ctx.userId,
+            verifiedAt: new Date(),
+          },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Compliance status changed during verification",
+          });
+        }
+        const updated = await transaction.complianceRecord.findUniqueOrThrow({
+          where: { id: input.id },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "COMPLIANCE_VERIFIED",
+          entity: "ComplianceRecord",
+          entityId: input.id,
+          metadata: { type: record.type },
+        });
+        return updated;
       });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "COMPLIANCE_VERIFIED",
-        entity: "ComplianceRecord",
-        entityId: input.id,
-        metadata: { type: record.type },
-      });
-
-      return updated;
     }),
 
   reject: protectedProcedure
     .use(verifierGuard)
     .input(z.object({ id: z.string(), reason: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
-      const record = await ctx.prisma.complianceRecord.findFirst({
-        where: { id: input.id, freelancer: { companyId: ctx.companyId } },
-      });
-      if (!record) throw new TRPCError({ code: "NOT_FOUND" });
+      return ctx.prisma.$transaction(async (transaction) => {
+        const record = await transaction.complianceRecord.findFirst({
+          where: { id: input.id, freelancer: { companyId: ctx.companyId } },
+        });
+        if (!record) throw new TRPCError({ code: "NOT_FOUND" });
+        if (record.status !== "PENDING") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `A ${record.status.toLowerCase()} record cannot be rejected`,
+          });
+        }
 
-      const updated = await ctx.prisma.complianceRecord.update({
-        where: { id: input.id },
-        data: {
-          status: "REJECTED",
-          notes: input.reason,
-          verifiedBy: ctx.userId,
-          verifiedAt: new Date(),
-        },
+        const claimed = await transaction.complianceRecord.updateMany({
+          where: { id: input.id, status: "PENDING" },
+          data: {
+            status: "REJECTED",
+            notes: input.reason,
+            verifiedBy: ctx.userId,
+            verifiedAt: new Date(),
+          },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Compliance status changed during rejection",
+          });
+        }
+        const updated = await transaction.complianceRecord.findUniqueOrThrow({
+          where: { id: input.id },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "COMPLIANCE_REJECTED",
+          entity: "ComplianceRecord",
+          entityId: input.id,
+          metadata: { reason: input.reason },
+        });
+        return updated;
       });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "COMPLIANCE_REJECTED",
-        entity: "ComplianceRecord",
-        entityId: input.id,
-        metadata: { reason: input.reason },
-      });
-
-      return updated;
     }),
 });

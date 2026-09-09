@@ -1,6 +1,6 @@
 import { router, protectedProcedure } from "../server";
-import { formatCurrency } from "@repo/utils";
-import type { PrismaClient, Timesheet, Contract } from "@repo/db";
+import { decimalToNumber } from "@repo/db";
+import type { PrismaClient } from "@repo/db";
 
 export const dashboardRouter = router({
   getStats: protectedProcedure.query(async ({ ctx }) => {
@@ -20,7 +20,6 @@ export const dashboardRouter = router({
       pendingInvoices,
       invoiceSummary,
       monthTimesheets,
-      contracts,
       compliancePending,
       complianceExpired,
     ] = await Promise.all([
@@ -29,7 +28,7 @@ export const dashboardRouter = router({
       ctx.prisma.project.count({ where: { companyId } }),
       ctx.prisma.project.count({ where: { companyId, status: "ACTIVE" } }),
       ctx.prisma.timesheet.count({
-        where: { status: "PENDING", freelancer: { companyId } },
+        where: { status: "PENDING", companyId },
       }),
       ctx.prisma.invoice.count({
         where: {
@@ -37,15 +36,22 @@ export const dashboardRouter = router({
           status: { in: ["DRAFT", "SENT", "VIEWED", "OVERDUE"] },
         },
       }),
-      ctx.prisma.invoice.findMany({ where: { companyId } }),
+      ctx.prisma.invoice.groupBy({
+        by: ["currency", "status"],
+        where: { companyId },
+        _sum: { totalAmount: true },
+      }),
       ctx.prisma.timesheet.findMany({
         where: {
           status: "APPROVED",
           date: { gte: startOfMonth },
-          freelancer: { companyId },
+          companyId,
+        },
+        select: {
+          hours: true,
+          contract: { select: { ratePerHour: true, currency: true } },
         },
       }),
-      ctx.prisma.contract.findMany({ where: { companyId } }),
       ctx.prisma.complianceRecord.count({
         where: { status: "PENDING", freelancer: { companyId } },
       }),
@@ -54,25 +60,30 @@ export const dashboardRouter = router({
       }),
     ]);
 
-    const rateMap = new Map(
-      contracts.map((c: Contract) => [
-        c.freelancerId,
-        { rate: c.ratePerHour, currency: c.currency },
-      ]),
-    );
-    const monthlySpend = monthTimesheets.reduce((sum, t: Timesheet) => {
-      const rate = rateMap.get(t.freelancerId)?.rate ?? 0;
-      return sum + t.hours * rate;
-    }, 0);
+    const financialByCurrency: Record<
+      string,
+      { monthlySpend: number; outstanding: number; paid: number }
+    > = {};
+    const getFinancialSummary = (currency: string) =>
+      (financialByCurrency[currency] ??= {
+        monthlySpend: 0,
+        outstanding: 0,
+        paid: 0,
+      });
 
-    const totalOutstanding = invoiceSummary
-      .filter((i) => ["SENT", "VIEWED", "OVERDUE"].includes(i.status))
-      .reduce((sum, i) => sum + i.totalAmount, 0);
-    const totalPaid = invoiceSummary
-      .filter((i) => i.status === "PAID")
-      .reduce((sum, i) => sum + i.totalAmount, 0);
-
-    const currency = contracts[0]?.currency ?? "USD";
+    for (const timesheet of monthTimesheets) {
+      if (!timesheet.contract) continue;
+      getFinancialSummary(timesheet.contract.currency).monthlySpend +=
+        timesheet.hours * decimalToNumber(timesheet.contract.ratePerHour);
+    }
+    for (const group of invoiceSummary) {
+      const amount = decimalToNumber(group._sum.totalAmount ?? 0);
+      const summary = getFinancialSummary(group.currency);
+      if (["SENT", "VIEWED", "OVERDUE"].includes(group.status)) {
+        summary.outstanding += amount;
+      }
+      if (group.status === "PAID") summary.paid += amount;
+    }
 
     return {
       stats: {
@@ -82,12 +93,7 @@ export const dashboardRouter = router({
         activeProjects: activeProjectCount,
         pendingTimesheets,
         pendingInvoices,
-        monthlySpend,
-        monthlySpendLabel: formatCurrency(monthlySpend, currency),
-        totalOutstanding,
-        totalOutstandingLabel: formatCurrency(totalOutstanding, currency),
-        totalPaid,
-        totalPaidLabel: formatCurrency(totalPaid, currency),
+        financialByCurrency,
         compliancePending,
         complianceExpired,
       },
@@ -173,26 +179,41 @@ async function getBudgetOverview(ctx: {
     where: { companyId: ctx.companyId },
   });
   const rateMap = new Map(
-    contracts.map((c) => [c.freelancerId, c.ratePerHour]),
+    contracts.map((contract) => [
+      contract.id,
+      {
+        rate: decimalToNumber(contract.ratePerHour),
+        currency: contract.currency,
+      },
+    ]),
   );
 
   const result = [];
   for (const project of projects) {
     const timesheets = await ctx.prisma.timesheet.findMany({
-      where: { projectId: project.id, status: "APPROVED" },
+      where: {
+        projectId: project.id,
+        companyId: ctx.companyId,
+        status: "APPROVED",
+      },
     });
-    const spent = timesheets.reduce(
-      (sum: number, t: Timesheet) =>
-        sum + t.hours * (rateMap.get(t.freelancerId) ?? 0),
-      0,
-    );
-    const budget = project.budget ?? 0;
+    let excludedCurrencyEntries = 0;
+    const spent = timesheets.reduce((sum, timesheet) => {
+      const contract = rateMap.get(timesheet.contractId ?? "");
+      if (!contract || contract.currency !== project.currency) {
+        excludedCurrencyEntries += 1;
+        return sum;
+      }
+      return sum + timesheet.hours * contract.rate;
+    }, 0);
+    const budget = project.budget ? decimalToNumber(project.budget) : 0;
     result.push({
       id: project.id,
       name: project.name,
       currency: project.currency,
       budget,
       spent,
+      excludedCurrencyEntries,
       percentUsed:
         budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0,
     });

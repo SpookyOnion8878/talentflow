@@ -1,9 +1,20 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import { paymentSchema, paginationSchema } from "@repo/validators";
-import { Prisma } from "@repo/db";
+import {
+  Prisma,
+  canTransition,
+  decimalToNumber,
+  invoiceTransitions,
+} from "@repo/db";
 import type { PaymentStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
+import { freelancerPublicSelect } from "../../freelancer-access";
+import { withSerializableTransaction } from "../../domain/transactions";
+import {
+  PaymentApplicationError,
+  calculatePaymentApplication,
+} from "../../domain/payments";
 
 const financeGuard = requireRole("OWNER", "ADMIN", "FINANCE");
 
@@ -18,37 +29,57 @@ export const paymentRouter = router({
       if (input.status && input.status !== "ALL")
         where.status = input.status as PaymentStatus;
 
-      const [data, total] = await Promise.all([
+      const [data, total, summaryGroups, totalCount] = await Promise.all([
         ctx.prisma.payment.findMany({
           where,
           skip,
           take: input.limit,
           orderBy: { createdAt: "desc" },
           include: {
-            invoice: { include: { freelancer: true } },
+            invoice: {
+              include: { freelancer: { select: freelancerPublicSelect } },
+            },
           },
         }),
         ctx.prisma.payment.count({ where }),
+        ctx.prisma.payment.groupBy({
+          by: ["currency", "status"],
+          where: { invoice: { companyId: ctx.companyId } },
+          _sum: { amount: true },
+        }),
+        ctx.prisma.payment.count({
+          where: { invoice: { companyId: ctx.companyId } },
+        }),
       ]);
 
-      // Summary
-      const allPayments = await ctx.prisma.payment.findMany({
-        where: { invoice: { companyId: ctx.companyId } },
-      });
       const processedByCurrency: Record<string, number> = {};
       const pendingByCurrency: Record<string, number> = {};
-      for (const p of allPayments) {
-        if (p.status === "COMPLETED") {
-          processedByCurrency[p.currency] =
-            (processedByCurrency[p.currency] ?? 0) + p.amount;
-        } else if (p.status === "PENDING" || p.status === "PROCESSING") {
-          pendingByCurrency[p.currency] =
-            (pendingByCurrency[p.currency] ?? 0) + p.amount;
+      for (const group of summaryGroups) {
+        const amount = decimalToNumber(group._sum.amount ?? 0);
+        if (group.status === "COMPLETED") {
+          processedByCurrency[group.currency] =
+            (processedByCurrency[group.currency] ?? 0) + amount;
+        } else if (
+          group.status === "PENDING" ||
+          group.status === "PROCESSING"
+        ) {
+          pendingByCurrency[group.currency] =
+            (pendingByCurrency[group.currency] ?? 0) + amount;
         }
       }
 
       return {
-        data,
+        data: data.map((payment) => ({
+          ...payment,
+          amount: decimalToNumber(payment.amount),
+          invoice: {
+            ...payment.invoice,
+            amount: decimalToNumber(payment.invoice.amount),
+            taxAmount: decimalToNumber(payment.invoice.taxAmount),
+            totalAmount: decimalToNumber(payment.invoice.totalAmount),
+            taxRate: decimalToNumber(payment.invoice.taxRate),
+          },
+        })),
         meta: {
           page: input.page,
           limit: input.limit,
@@ -58,7 +89,7 @@ export const paymentRouter = router({
         summary: {
           processedByCurrency,
           pendingByCurrency,
-          totalCount: allPayments.length,
+          totalCount,
         },
       };
     }),
@@ -67,48 +98,97 @@ export const paymentRouter = router({
     .use(financeGuard)
     .input(paymentSchema)
     .mutation(async ({ input, ctx }) => {
-      const invoice = await ctx.prisma.invoice.findFirst({
-        where: { id: input.invoiceId, companyId: ctx.companyId },
-      });
-      if (!invoice)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Invoice not found",
-        });
-      if (input.amount > invoice.totalAmount) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Payment amount exceeds invoice total",
-        });
-      }
+      const payment = await withSerializableTransaction(
+        ctx.prisma,
+        async (transaction) => {
+          const invoice = await transaction.invoice.findFirst({
+            where: { id: input.invoiceId, companyId: ctx.companyId },
+            include: {
+              payments: {
+                where: { status: "COMPLETED" },
+                select: { amount: true },
+              },
+            },
+          });
+          if (!invoice) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Invoice not found",
+            });
+          }
+          let application: ReturnType<typeof calculatePaymentApplication>;
+          try {
+            application = calculatePaymentApplication({
+              invoiceStatus: invoice.status,
+              invoiceCurrency: invoice.currency,
+              paymentCurrency: input.currency,
+              invoiceTotal: invoice.totalAmount,
+              completedPayments: invoice.payments.map((entry) => entry.amount),
+              requestedAmount: input.amount,
+            });
+          } catch (error) {
+            if (error instanceof PaymentApplicationError) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: error.message,
+              });
+            }
+            throw error;
+          }
+          const { amount, remaining } = application;
 
-      const { invoiceId, ...data } = input;
-      const [payment] = await ctx.prisma.$transaction([
-        ctx.prisma.payment.upsert({
-          where: { invoiceId },
-          update: { ...data, status: "COMPLETED", processedAt: new Date() },
-          create: {
-            ...data,
-            invoiceId,
-            status: "COMPLETED",
-            processedAt: new Date(),
-          },
-        }),
-        ctx.prisma.invoice.update({
-          where: { id: invoiceId },
-          data: { status: "PAID", paidAt: new Date() },
-        }),
-      ]);
+          const created = await transaction.payment.create({
+            data: {
+              invoiceId: input.invoiceId,
+              amount,
+              currency: input.currency,
+              method: input.method,
+              reference: input.reference,
+              notes: input.notes,
+              status: "COMPLETED",
+              processedAt: new Date(),
+            },
+          });
+          if (application.settlesInvoice) {
+            if (!canTransition(invoiceTransitions, invoice.status, "PAID")) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Invoice cannot transition from ${invoice.status} to PAID`,
+              });
+            }
+            const claimed = await transaction.invoice.updateMany({
+              where: {
+                id: input.invoiceId,
+                companyId: ctx.companyId,
+                status: invoice.status,
+              },
+              data: { status: "PAID", paidAt: new Date() },
+            });
+            if (claimed.count !== 1) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: "Invoice status changed during payment processing",
+              });
+            }
+          }
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "PAYMENT_RECORDED",
-        entity: "Payment",
-        entityId: payment.id,
-        metadata: { invoiceId, amount: input.amount, method: input.method },
-      });
+          await audit(transaction, {
+            companyId: ctx.companyId,
+            userId: ctx.userId,
+            action: "PAYMENT_RECORDED",
+            entity: "Payment",
+            entityId: created.id,
+            metadata: {
+              invoiceId: input.invoiceId,
+              amount: amount.toFixed(4),
+              remaining: remaining.toFixed(4),
+              method: input.method,
+            },
+          });
+          return created;
+        },
+      );
 
-      return payment;
+      return { ...payment, amount: decimalToNumber(payment.amount) };
     }),
 });

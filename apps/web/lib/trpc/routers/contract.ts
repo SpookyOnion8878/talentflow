@@ -1,12 +1,33 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import { contractSchema, paginationSchema } from "@repo/validators";
-import { Prisma } from "@repo/db";
+import {
+  Prisma,
+  canTransition,
+  contractTransitions,
+  decimalToNumber,
+} from "@repo/db";
 import type { ContractStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { generateContractNumber } from "@repo/utils";
+import { freelancerPublicSelect } from "../../freelancer-access";
 
 const managerGuard = requireRole("OWNER", "ADMIN", "MANAGER");
+
+function requireContractTransition(from: string, to: string): void {
+  if (!canTransition(contractTransitions, from, to)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Contract cannot transition from ${from} to ${to}`,
+    });
+  }
+}
+
+function serializeContractMoney<T extends { ratePerHour: Prisma.Decimal }>(
+  contract: T,
+) {
+  return { ...contract, ratePerHour: decimalToNumber(contract.ratePerHour) };
+}
 
 export const contractRouter = router({
   list: protectedProcedure
@@ -24,7 +45,7 @@ export const contractRouter = router({
           take: input.limit,
           orderBy: { createdAt: "desc" },
           include: {
-            freelancer: true,
+            freelancer: { select: freelancerPublicSelect },
             project: { select: { id: true, name: true } },
             creator: { select: { id: true, name: true } },
             signer: { select: { id: true, name: true } },
@@ -34,7 +55,7 @@ export const contractRouter = router({
       ]);
 
       return {
-        data,
+        data: data.map(serializeContractMoney),
         meta: {
           page: input.page,
           limit: input.limit,
@@ -50,7 +71,7 @@ export const contractRouter = router({
       const contract = await ctx.prisma.contract.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          freelancer: true,
+          freelancer: { select: freelancerPublicSelect },
           project: true,
           creator: { select: { id: true, name: true } },
           signer: { select: { id: true, name: true } },
@@ -61,7 +82,7 @@ export const contractRouter = router({
           code: "NOT_FOUND",
           message: "Contract not found",
         });
-      return contract;
+      return serializeContractMoney(contract);
     }),
 
   create: protectedProcedure
@@ -77,26 +98,41 @@ export const contractRouter = router({
           message: "Freelancer not found",
         });
 
-      const contract = await ctx.prisma.contract.create({
-        data: {
-          ...input,
-          terms: input.terms as Prisma.InputJsonValue,
-          contractNo: generateContractNumber(),
+      if (input.projectId) {
+        const project = await ctx.prisma.project.findFirst({
+          where: { id: input.projectId, companyId: ctx.companyId },
+          select: { id: true },
+        });
+        if (!project) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
+        }
+      }
+
+      const contract = await ctx.prisma.$transaction(async (transaction) => {
+        const created = await transaction.contract.create({
+          data: {
+            ...input,
+            terms: input.terms as Prisma.InputJsonValue,
+            contractNo: generateContractNumber(),
+            companyId: ctx.companyId,
+            createdBy: ctx.userId,
+          },
+        });
+        await audit(transaction, {
           companyId: ctx.companyId,
-          createdBy: ctx.userId,
-        },
+          userId: ctx.userId,
+          action: "CONTRACT_CREATED",
+          entity: "Contract",
+          entityId: created.id,
+          metadata: { contractNo: created.contractNo, title: created.title },
+        });
+        return created;
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "CONTRACT_CREATED",
-        entity: "Contract",
-        entityId: contract.id,
-        metadata: { contractNo: contract.contractNo, title: contract.title },
-      });
-
-      return contract;
+      return serializeContractMoney(contract);
     }),
 
   sign: protectedProcedure
@@ -111,28 +147,41 @@ export const contractRouter = router({
           code: "NOT_FOUND",
           message: "Contract not found",
         });
-      if (contract.status !== "DRAFT" && contract.status !== "SENT") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Only draft or sent contracts can be signed",
+      requireContractTransition(contract.status, "SIGNED");
+
+      const signed = await ctx.prisma.$transaction(async (transaction) => {
+        const claimed = await transaction.contract.updateMany({
+          where: {
+            id: input.id,
+            companyId: ctx.companyId,
+            status: contract.status,
+          },
+          data: {
+            status: "SIGNED",
+            signedBy: ctx.userId,
+            signedAt: new Date(),
+          },
         });
-      }
-
-      const signed = await ctx.prisma.contract.update({
-        where: { id: input.id },
-        data: { status: "SIGNED", signedBy: ctx.userId, signedAt: new Date() },
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Contract status changed during this request",
+          });
+        }
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "CONTRACT_SIGNED",
+          entity: "Contract",
+          entityId: contract.id,
+          metadata: { contractNo: contract.contractNo },
+        });
+        return transaction.contract.findUniqueOrThrow({
+          where: { id: input.id },
+        });
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "CONTRACT_SIGNED",
-        entity: "Contract",
-        entityId: contract.id,
-        metadata: { contractNo: contract.contractNo },
-      });
-
-      return signed;
+      return serializeContractMoney(signed);
     }),
 
   send: protectedProcedure
@@ -143,11 +192,36 @@ export const contractRouter = router({
         where: { id: input.id, companyId: ctx.companyId },
       });
       if (!contract) throw new TRPCError({ code: "NOT_FOUND" });
+      requireContractTransition(contract.status, "SENT");
 
-      return ctx.prisma.contract.update({
-        where: { id: input.id },
-        data: { status: "SENT" },
+      const sent = await ctx.prisma.$transaction(async (transaction) => {
+        const claimed = await transaction.contract.updateMany({
+          where: {
+            id: input.id,
+            companyId: ctx.companyId,
+            status: contract.status,
+          },
+          data: { status: "SENT" },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Contract status changed during this request",
+          });
+        }
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "CONTRACT_SENT",
+          entity: "Contract",
+          entityId: contract.id,
+          metadata: { contractNo: contract.contractNo },
+        });
+        return transaction.contract.findUniqueOrThrow({
+          where: { id: input.id },
+        });
       });
+      return serializeContractMoney(sent);
     }),
 
   terminate: protectedProcedure
@@ -158,21 +232,36 @@ export const contractRouter = router({
         where: { id: input.id, companyId: ctx.companyId },
       });
       if (!contract) throw new TRPCError({ code: "NOT_FOUND" });
+      requireContractTransition(contract.status, "TERMINATED");
 
-      const terminated = await ctx.prisma.contract.update({
-        where: { id: input.id },
-        data: { status: "TERMINATED", endDate: new Date() },
+      const terminated = await ctx.prisma.$transaction(async (transaction) => {
+        const claimed = await transaction.contract.updateMany({
+          where: {
+            id: input.id,
+            companyId: ctx.companyId,
+            status: contract.status,
+          },
+          data: { status: "TERMINATED", endDate: new Date() },
+        });
+        if (claimed.count !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Contract status changed during this request",
+          });
+        }
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "CONTRACT_TERMINATED",
+          entity: "Contract",
+          entityId: contract.id,
+          metadata: { contractNo: contract.contractNo },
+        });
+        return transaction.contract.findUniqueOrThrow({
+          where: { id: input.id },
+        });
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "CONTRACT_TERMINATED",
-        entity: "Contract",
-        entityId: contract.id,
-        metadata: { contractNo: contract.contractNo },
-      });
-
-      return terminated;
+      return serializeContractMoney(terminated);
     }),
 });

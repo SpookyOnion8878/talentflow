@@ -1,11 +1,16 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import { freelancerSchema, paginationSchema } from "@repo/validators";
-import { Prisma } from "@repo/db";
+import { Prisma, decimalToNumber } from "@repo/db";
 import type { FreelancerStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
+import {
+  hasRestrictedFinancialMutation,
+  redactFreelancerSensitiveFields,
+} from "../../freelancer-access";
 
 const roleGuard = requireRole("OWNER", "ADMIN", "MANAGER");
+const detailGuard = requireRole("OWNER", "ADMIN", "MANAGER", "FINANCE");
 
 export const freelancerRouter = router({
   list: protectedProcedure
@@ -43,12 +48,15 @@ export const freelancerRouter = router({
       ]);
 
       return {
-        data,
+        data: data.map((freelancer) =>
+          redactFreelancerSensitiveFields(freelancer, ctx.membership.role),
+        ),
         meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
       };
     }),
 
   getById: protectedProcedure
+    .use(detailGuard)
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       const freelancer = await ctx.prisma.freelancer.findFirst({
@@ -74,70 +82,107 @@ export const freelancerRouter = router({
           code: "NOT_FOUND",
           message: "Freelancer not found",
         });
-      return freelancer;
+      return redactFreelancerSensitiveFields(
+        {
+          ...freelancer,
+          contracts: freelancer.contracts.map((contract) => ({
+            ...contract,
+            ratePerHour: decimalToNumber(contract.ratePerHour),
+          })),
+          invoices: freelancer.invoices.map((invoice) => ({
+            ...invoice,
+            amount: decimalToNumber(invoice.amount),
+            taxAmount: decimalToNumber(invoice.taxAmount),
+            totalAmount: decimalToNumber(invoice.totalAmount),
+            taxRate: decimalToNumber(invoice.taxRate),
+          })),
+        },
+        ctx.membership.role,
+      );
     }),
 
   create: protectedProcedure
+    .use(roleGuard)
     .input(freelancerSchema)
     .mutation(async ({ input, ctx }) => {
-      const freelancer = await ctx.prisma.freelancer.create({
-        data: { ...input, companyId: ctx.companyId },
+      if (hasRestrictedFinancialMutation(ctx.membership.role, input)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only owners and administrators can set financial PII",
+        });
+      }
+
+      const freelancer = await ctx.prisma.$transaction(async (transaction) => {
+        const created = await transaction.freelancer.create({
+          data: { ...input, companyId: ctx.companyId },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "FREELANCER_CREATED",
+          entity: "Freelancer",
+          entityId: created.id,
+          metadata: { name: `${created.firstName} ${created.lastName}` },
+        });
+        return created;
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "FREELANCER_CREATED",
-        entity: "Freelancer",
-        entityId: freelancer.id,
-        metadata: { name: `${freelancer.firstName} ${freelancer.lastName}` },
-      });
-
-      return freelancer;
+      return redactFreelancerSensitiveFields(freelancer, ctx.membership.role);
     }),
 
   update: protectedProcedure
+    .use(roleGuard)
     .input(z.object({ id: z.string(), data: freelancerSchema.partial() }))
     .mutation(async ({ input, ctx }) => {
-      const existing = await ctx.prisma.freelancer.findFirst({
-        where: { id: input.id, companyId: ctx.companyId },
-      });
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+      if (hasRestrictedFinancialMutation(ctx.membership.role, input.data)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only owners and administrators can change financial PII",
+        });
+      }
 
-      const freelancer = await ctx.prisma.freelancer.update({
-        where: { id: input.id },
-        data: input.data,
+      const freelancer = await ctx.prisma.$transaction(async (transaction) => {
+        const existing = await transaction.freelancer.findFirst({
+          where: { id: input.id, companyId: ctx.companyId },
+        });
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const updated = await transaction.freelancer.update({
+          where: { id: input.id },
+          data: input.data,
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "FREELANCER_UPDATED",
+          entity: "Freelancer",
+          entityId: updated.id,
+        });
+        return updated;
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "FREELANCER_UPDATED",
-        entity: "Freelancer",
-        entityId: freelancer.id,
-      });
-
-      return freelancer;
+      return redactFreelancerSensitiveFields(freelancer, ctx.membership.role);
     }),
 
   delete: protectedProcedure
     .use(roleGuard)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const existing = await ctx.prisma.freelancer.findFirst({
-        where: { id: input.id, companyId: ctx.companyId },
-      });
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+      await ctx.prisma.$transaction(async (transaction) => {
+        const existing = await transaction.freelancer.findFirst({
+          where: { id: input.id, companyId: ctx.companyId },
+        });
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await ctx.prisma.freelancer.delete({ where: { id: input.id } });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "FREELANCER_DELETED",
-        entity: "Freelancer",
-        entityId: input.id,
-        metadata: { name: `${existing.firstName} ${existing.lastName}` },
+        await transaction.freelancer.delete({ where: { id: input.id } });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "FREELANCER_DELETED",
+          entity: "Freelancer",
+          entityId: input.id,
+          metadata: { name: `${existing.firstName} ${existing.lastName}` },
+        });
       });
 
       return { success: true };

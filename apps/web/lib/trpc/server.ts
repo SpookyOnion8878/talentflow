@@ -73,7 +73,7 @@ export const requireRole = (...roles: MembershipRole[]) =>
   );
 
 export const audit = async (
-  prisma: PrismaClient,
+  prisma: PrismaClient | Prisma.TransactionClient,
   params: {
     companyId: string;
     userId?: string | null;

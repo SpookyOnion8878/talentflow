@@ -6,7 +6,7 @@ const ownerGuard = requireRole("OWNER");
 const teamGuard = requireRole("OWNER", "ADMIN");
 
 export const membershipRouter = router({
-  /** Role member saat ini (untuk gating UI client-side). */
+  /** Current member role for client-side UI gating. */
   myRole: protectedProcedure.query(({ ctx }) => ({
     role: ctx.membership.role,
     companyId: ctx.companyId,
@@ -53,22 +53,24 @@ export const membershipRouter = router({
         });
       }
 
-      const membership = await ctx.prisma.membership.create({
-        data: {
-          userId: user.id,
+      const membership = await ctx.prisma.$transaction(async (transaction) => {
+        const created = await transaction.membership.create({
+          data: {
+            userId: user.id,
+            companyId: ctx.companyId,
+            role: input.role,
+            status: "PENDING",
+          },
+        });
+        await audit(transaction, {
           companyId: ctx.companyId,
-          role: input.role,
-          status: "PENDING",
-        },
-      });
-
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "MEMBER_INVITED",
-        entity: "Membership",
-        entityId: membership.id,
-        metadata: { email: input.email, role: input.role },
+          userId: ctx.userId,
+          action: "MEMBER_INVITED",
+          entity: "Membership",
+          entityId: created.id,
+          metadata: { email: input.email, role: input.role },
+        });
+        return created;
       });
 
       return membership;
@@ -83,20 +85,31 @@ export const membershipRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const membership = await ctx.prisma.membership.findFirst({
-        where: { id: input.membershipId, companyId: ctx.companyId },
-      });
-      if (!membership) throw new TRPCError({ code: "NOT_FOUND" });
-      if (membership.role === "OWNER") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot change the owner role",
+      return ctx.prisma.$transaction(async (transaction) => {
+        const membership = await transaction.membership.findFirst({
+          where: { id: input.membershipId, companyId: ctx.companyId },
         });
-      }
+        if (!membership) throw new TRPCError({ code: "NOT_FOUND" });
+        if (membership.role === "OWNER") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot change the owner role",
+          });
+        }
 
-      return ctx.prisma.membership.update({
-        where: { id: input.membershipId },
-        data: { role: input.role },
+        const updated = await transaction.membership.update({
+          where: { id: input.membershipId },
+          data: { role: input.role },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "MEMBER_ROLE_UPDATED",
+          entity: "Membership",
+          entityId: updated.id,
+          metadata: { previousRole: membership.role, role: input.role },
+        });
+        return updated;
       });
     }),
 
@@ -104,18 +117,30 @@ export const membershipRouter = router({
     .use(ownerGuard)
     .input(z.object({ membershipId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const membership = await ctx.prisma.membership.findFirst({
-        where: { id: input.membershipId, companyId: ctx.companyId },
-      });
-      if (!membership) throw new TRPCError({ code: "NOT_FOUND" });
-      if (membership.role === "OWNER") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot remove the owner",
+      await ctx.prisma.$transaction(async (transaction) => {
+        const membership = await transaction.membership.findFirst({
+          where: { id: input.membershipId, companyId: ctx.companyId },
         });
-      }
+        if (!membership) throw new TRPCError({ code: "NOT_FOUND" });
+        if (membership.role === "OWNER") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot remove the owner",
+          });
+        }
 
-      await ctx.prisma.membership.delete({ where: { id: input.membershipId } });
+        await transaction.membership.delete({
+          where: { id: input.membershipId },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "MEMBER_REMOVED",
+          entity: "Membership",
+          entityId: membership.id,
+          metadata: { removedUserId: membership.userId, role: membership.role },
+        });
+      });
       return { success: true };
     }),
 });

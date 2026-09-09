@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import type { Prisma } from "@repo/db";
-import { AgentRunStatus } from "@repo/db";
+import { Prisma } from "@repo/db";
 import type { StepRecord } from "@repo/agents";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import {
@@ -13,17 +12,27 @@ import {
   routeIntent,
   runCopilotChat,
   attachToolAction,
+  startRun,
   endRun,
   getTool,
+  canApproveTool,
+  toolRegistry,
   getEmbeddingProvider,
   ingestCompanyData,
+  findStoredCopilotSuggestion,
+  canProcessCompanyDataWithProvider,
+  AgentAuthorizationError,
+  evaluateGuard,
 } from "@repo/agents";
+import { checkRateLimit } from "../../rate-limit";
+import { agentActivityInputSchema } from "../../agent-inputs";
 
 const ownerGuard = requireRole("OWNER", "ADMIN");
 const queueGuard = requireRole("OWNER", "ADMIN", "FINANCE");
+const agentDataGuard = requireRole("OWNER", "ADMIN", "MANAGER", "FINANCE");
 
 export const agentsRouter = router({
-  /** Konfigurasi agent untuk perusahaan ini. */
+  /** Returns agent configuration for the active company. */
   configList: protectedProcedure.use(ownerGuard).query(async ({ ctx }) => {
     const configs = await ctx.prisma.agentConfig.findMany({
       where: { companyId: ctx.companyId },
@@ -93,11 +102,18 @@ export const agentsRouter = router({
       return config;
     }),
 
-  /** Indeks ulang embeddings RAG untuk perusahaan ini (freelancer/project/invoice/compliance). */
+  /** Rebuilds the active company's freelancer, project, invoice, and compliance embeddings. */
   reindexEmbeddings: protectedProcedure
     .use(ownerGuard)
     .mutation(async ({ ctx }) => {
       const provider = getEmbeddingProvider();
+      if (!canProcessCompanyDataWithProvider(ctx.companyId, provider)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "External AI data processing is not enabled for this company",
+        });
+      }
       const result = await ingestCompanyData(
         ctx.prisma,
         ctx.companyId,
@@ -113,7 +129,7 @@ export const agentsRouter = router({
       return result;
     }),
 
-  /** Ringkasan biaya token: pemakaian bulan ini vs budget + seri mingguan. */
+  /** Returns current-month token usage, budgets, and weekly history. */
   costDashboard: protectedProcedure.query(async ({ ctx }) => {
     const monthStart = new Date();
     monthStart.setDate(1);
@@ -180,10 +196,19 @@ export const agentsRouter = router({
     };
   }),
 
-  /** Approval queue: aksi PROPOSE yang menunggu persetujuan. */
+  /** Returns pending proposals that the current role is allowed to approve. */
   queue: protectedProcedure.use(queueGuard).query(async ({ ctx }) => {
+    const approvableTools = toolRegistry
+      .filter((tool) => canApproveTool(tool, ctx.membership.role))
+      .map((tool) => tool.name);
+    if (approvableTools.length === 0) return [];
+
     return ctx.prisma.agentAction.findMany({
-      where: { run: { companyId: ctx.companyId }, status: "PENDING" },
+      where: {
+        run: { companyId: ctx.companyId },
+        status: "PENDING",
+        tool: { in: approvableTools },
+      },
       orderBy: { createdAt: "asc" },
       include: {
         run: {
@@ -198,12 +223,21 @@ export const agentsRouter = router({
     .use(queueGuard)
     .input(z.object({ actionId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const result = await executeProposedAction(
-        ctx.prisma,
-        input.actionId,
-        ctx.userId,
-        ctx.companyId,
-      );
+      let result;
+      try {
+        result = await executeProposedAction(
+          ctx.prisma,
+          input.actionId,
+          ctx.userId,
+          ctx.companyId,
+          ctx.membership.role,
+        );
+      } catch (error) {
+        if (error instanceof AgentAuthorizationError) {
+          throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+        }
+        throw error;
+      }
 
       await audit(ctx.prisma, {
         companyId: ctx.companyId,
@@ -231,13 +265,22 @@ export const agentsRouter = router({
     .use(queueGuard)
     .input(z.object({ actionId: z.string(), reason: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
-      const action = await rejectProposedAction(
-        ctx.prisma,
-        input.actionId,
-        ctx.userId,
-        input.reason,
-        ctx.companyId,
-      );
+      let action;
+      try {
+        action = await rejectProposedAction(
+          ctx.prisma,
+          input.actionId,
+          ctx.userId,
+          input.reason,
+          ctx.companyId,
+          ctx.membership.role,
+        );
+      } catch (error) {
+        if (error instanceof AgentAuthorizationError) {
+          throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+        }
+        throw error;
+      }
 
       await audit(ctx.prisma, {
         companyId: ctx.companyId,
@@ -250,34 +293,32 @@ export const agentsRouter = router({
       return action;
     }),
 
-  /** Activity log semua run agent. */
+  /** Returns the paginated agent-run activity log. */
   activity: protectedProcedure
-    .input(
-      z.object({
-        page: z.number().default(1),
-        limit: z.number().default(20),
-        status: z.string().optional(),
-      }),
-    )
+    .use(agentDataGuard)
+    .input(agentActivityInputSchema)
     .query(async ({ input, ctx }) => {
       const skip = (input.page - 1) * input.limit;
       const where: Prisma.AgentRunWhereInput = { companyId: ctx.companyId };
-      if (
-        input.status &&
-        Object.values(AgentRunStatus).includes(
-          input.status as (typeof AgentRunStatus)[keyof typeof AgentRunStatus],
-        )
-      ) {
-        where.status =
-          input.status as (typeof AgentRunStatus)[keyof typeof AgentRunStatus];
-      }
+      if (input.status) where.status = input.status;
       const [data, total] = await Promise.all([
         ctx.prisma.agentRun.findMany({
           where,
           skip,
           take: input.limit,
           orderBy: { startedAt: "desc" },
-          include: { _count: { select: { actions: true } } },
+          select: {
+            id: true,
+            agentType: true,
+            triggerType: true,
+            intent: true,
+            status: true,
+            model: true,
+            totalTokens: true,
+            startedAt: true,
+            finishedAt: true,
+            _count: { select: { actions: true } },
+          },
         }),
         ctx.prisma.agentRun.count({ where }),
       ]);
@@ -293,7 +334,7 @@ export const agentsRouter = router({
       };
     }),
 
-  /** Jalankan satu siklus agent sekarang (untuk demo & cron manual). */
+  /** Runs one agent cycle for manual operations and demonstrations. */
   runNow: protectedProcedure
     .use(ownerGuard)
     .input(z.object({ agentType: agentTypeSchema }))
@@ -313,7 +354,7 @@ export const agentsRouter = router({
       return { message: `Process completed (${processed} jobs)`, results };
     }),
 
-  /** Status ringkas agent untuk badge & ringkasan. */
+  /** Returns concise agent status for navigation badges and summaries. */
   status: protectedProcedure.query(async ({ ctx }) => {
     const [configs, pending] = await Promise.all([
       ctx.prisma.agentConfig.findMany({
@@ -341,14 +382,21 @@ export const agentsRouter = router({
     };
   }),
 
-  /** Chat kopilot: intent rules → konteks perusahaan → jawaban + saran aksi. */
+  /** Runs rule-based copilot intent routing and company-context suggestions. */
   chat: protectedProcedure
+    .use(agentDataGuard)
     .input(
       z.object({
         message: z.string().min(1).max(400).trim(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      if (!checkRateLimit(`agent-chat:${ctx.userId}`, 30, 15 * 60 * 1000)) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Too many copilot requests. Please try again later.",
+        });
+      }
       const copilot = await ctx.prisma.agentConfig.findUnique({
         where: {
           companyId_agentType: {
@@ -388,84 +436,148 @@ export const agentsRouter = router({
       return { runId, intent: decision.intent, answer, suggestions };
     }),
 
-  /**
-   * Terapkan saran aksi dari chat (user eksplisit mengklik tombol Apply).
-   * Guardrail dijalankan ulang; role user diperiksa di permission tool.
-   */
+  /** Applies a recent server-issued suggestion after re-running all guards. */
   applySuggestion: protectedProcedure
+    .use(agentDataGuard)
     .input(
       z.object({
-        tool: z.string(),
-        params: z.record(z.string(), z.unknown()),
+        runId: z.string(),
+        suggestionId: z.string(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const tool = getTool(input.tool);
+      if (
+        !checkRateLimit(`agent-suggestion:${ctx.userId}`, 20, 15 * 60 * 1000)
+      ) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Too many suggestion requests. Please try again later.",
+        });
+      }
+      const sourceRun = await ctx.prisma.agentRun.findFirst({
+        where: {
+          id: input.runId,
+          companyId: ctx.companyId,
+          agentType: "OPS_COPILOT",
+          triggerType: "USER_CHAT",
+          status: "SUCCEEDED",
+          startedAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+        },
+        select: { id: true, steps: true },
+      });
+      if (!sourceRun) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Suggestion is missing, expired, or belongs to another company",
+        });
+      }
+
+      const suggestion = findStoredCopilotSuggestion(
+        sourceRun.steps,
+        input.suggestionId,
+      );
+      if (!suggestion) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Suggestion is not part of the referenced chat run",
+        });
+      }
+
+      const tool = getTool(suggestion.tool);
       if (!tool) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tool" });
       }
 
-      const config = await ctx.prisma.agentConfig.upsert({
+      const config = await ctx.prisma.agentConfig.findUnique({
         where: {
           companyId_agentType: {
             companyId: ctx.companyId,
             agentType: "OPS_COPILOT",
           },
         },
-        create: {
-          companyId: ctx.companyId,
-          agentType: "OPS_COPILOT",
-          enabled: true,
-          mode: "PROPOSE",
-          monthlyTokenBudget: 100000,
-        },
-        update: {},
       });
-      if (!config.enabled) {
+      if (!config?.enabled) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Agent is disabled for this company.",
         });
       }
 
-      const toolRun = await ctx.prisma.agentRun.findFirst({
-        where: { companyId: ctx.companyId, agentType: "OPS_COPILOT" },
-        orderBy: { startedAt: "desc" },
-        select: { id: true },
+      const parsedInput = tool.inputSchema.safeParse(suggestion.params);
+      if (!parsedInput.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Stored suggestion input is invalid",
+        });
+      }
+      const preflight = await evaluateGuard({
+        tool,
+        ctx: {
+          companyId: ctx.companyId,
+          prisma: ctx.prisma,
+          actorRole: ctx.membership.role,
+          triggeredBy: ctx.userId,
+        },
+        input: parsedInput.data,
+        config,
       });
-      const runId =
-        toolRun?.id ??
-        (
-          await ctx.prisma.agentRun.create({
-            data: {
-              companyId: ctx.companyId,
-              agentType: "OPS_COPILOT",
-              triggerType: "USER_CHAT",
-              intent: "apply_suggestion",
-              model: "rule-based",
-              status: "RUNNING",
-            },
-          })
-        ).id;
+      if (!preflight.allowed) {
+        const forbidden = preflight.reason?.startsWith("role ");
+        throw new TRPCError({
+          code: forbidden ? "FORBIDDEN" : "CONFLICT",
+          message: preflight.reason ?? "Suggestion was denied by guardrails",
+        });
+      }
+
+      let actionRun;
+      try {
+        actionRun = await startRun(ctx.prisma, {
+          id: `suggestion-${sourceRun.id}-${suggestion.id}`,
+          companyId: ctx.companyId,
+          agentType: "OPS_COPILOT",
+          triggerType: "USER_CHAT",
+          intent: `apply_suggestion:${sourceRun.id}:${suggestion.id}`,
+          model: "rule-based",
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Suggestion has already been consumed",
+          });
+        }
+        throw error;
+      }
 
       const steps: StepRecord[] = [];
-
-      const result = await attachToolAction({
-        prisma: ctx.prisma,
-        runId,
-        companyId: ctx.companyId,
-        agentType: "OPS_COPILOT",
-        tool,
-        input: input.params,
-        actorRole: ctx.membership.role,
-        steps,
-      });
-
-      if (!toolRun) {
-        await endRun(ctx.prisma, runId, {
+      let result;
+      try {
+        result = await attachToolAction({
+          prisma: ctx.prisma,
+          runId: actionRun.id,
+          companyId: ctx.companyId,
+          agentType: "OPS_COPILOT",
+          tool,
+          input: suggestion.params,
+          actorRole: ctx.membership.role,
+          triggeredBy: ctx.userId,
+          steps,
+        });
+        await endRun(ctx.prisma, actionRun.id, {
           status: "SUCCEEDED",
           steps,
         });
+      } catch (error) {
+        await endRun(ctx.prisma, actionRun.id, {
+          status: "FAILED",
+          steps,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
       }
 
       await audit(ctx.prisma, {
@@ -479,7 +591,9 @@ export const agentsRouter = router({
         entity: "AgentAction",
         entityId: result.action?.id ?? null,
         metadata: {
-          tool: input.tool,
+          tool: suggestion.tool,
+          sourceRunId: sourceRun.id,
+          suggestionId: suggestion.id,
           deniedReason: result.deniedReason ?? null,
         },
       });

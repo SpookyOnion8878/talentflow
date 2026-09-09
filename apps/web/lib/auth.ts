@@ -20,16 +20,23 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const headers = req?.headers as Record<string, string> | undefined;
+        if (!checkRateLimit("login:global", 1000, 15 * 60 * 1000)) {
+          return null;
+        }
+        const emailKey = credentials.email.trim().toLowerCase();
+        if (!checkRateLimit(`login:account:${emailKey}`, 10, 15 * 60 * 1000)) {
+          return null;
+        }
         const forwarded = headers?.["x-forwarded-for"];
-        const ip = forwarded
-          ? forwarded.split(",")[0]!.trim()
-          : (headers?.["x-real-ip"] ?? "unknown");
+        const ip =
+          process.env.TRUSTED_PROXY === "true"
+            ? forwarded
+              ? forwarded.split(",")[0]!.trim()
+              : (headers?.["x-real-ip"] ?? "unknown")
+            : "unknown";
         if (
-          !checkRateLimit(
-            `login:${credentials.email.toLowerCase()}:${ip}`,
-            10,
-            15 * 60 * 1000,
-          )
+          ip !== "unknown" &&
+          !checkRateLimit(`login:ip:${ip}`, 50, 15 * 60 * 1000)
         ) {
           return null;
         }

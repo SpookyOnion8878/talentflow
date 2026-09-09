@@ -1,11 +1,25 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
-import { projectSchema, paginationSchema } from "@repo/validators";
-import { Prisma } from "@repo/db";
+import {
+  projectSchema,
+  projectUpdateSchema,
+  paginationSchema,
+} from "@repo/validators";
+import { Prisma, decimalToNumber } from "@repo/db";
 import type { ProjectStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
+import { freelancerPublicSelect } from "../../freelancer-access";
 
 const roleGuard = requireRole("OWNER", "ADMIN", "MANAGER");
+
+function serializeProjectMoney<T extends { budget: Prisma.Decimal | null }>(
+  project: T,
+) {
+  return {
+    ...project,
+    budget: project.budget === null ? null : decimalToNumber(project.budget),
+  };
+}
 
 export const projectRouter = router({
   list: protectedProcedure
@@ -42,7 +56,7 @@ export const projectRouter = router({
       ]);
 
       return {
-        data,
+        data: data.map(serializeProjectMoney),
         meta: {
           page: input.page,
           limit: input.limit,
@@ -58,8 +72,12 @@ export const projectRouter = router({
       const project = await ctx.prisma.project.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
         include: {
-          assignments: { include: { freelancer: true } },
-          contracts: { include: { freelancer: true } },
+          assignments: {
+            include: { freelancer: { select: freelancerPublicSelect } },
+          },
+          contracts: {
+            include: { freelancer: { select: freelancerPublicSelect } },
+          },
           timesheets: {
             orderBy: { date: "desc" },
             take: 20,
@@ -77,52 +95,70 @@ export const projectRouter = router({
           code: "NOT_FOUND",
           message: "Project not found",
         });
-      return project;
+      return {
+        ...serializeProjectMoney(project),
+        contracts: project.contracts.map((contract) => ({
+          ...contract,
+          ratePerHour: decimalToNumber(contract.ratePerHour),
+        })),
+      };
     }),
 
   create: protectedProcedure
     .use(roleGuard)
     .input(projectSchema)
     .mutation(async ({ input, ctx }) => {
-      const project = await ctx.prisma.project.create({
-        data: { ...input, companyId: ctx.companyId },
+      const project = await ctx.prisma.$transaction(async (transaction) => {
+        const created = await transaction.project.create({
+          data: { ...input, companyId: ctx.companyId },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "PROJECT_CREATED",
+          entity: "Project",
+          entityId: created.id,
+          metadata: { name: created.name },
+        });
+        return created;
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "PROJECT_CREATED",
-        entity: "Project",
-        entityId: project.id,
-        metadata: { name: project.name },
-      });
-
-      return project;
+      return serializeProjectMoney(project);
     }),
 
   update: protectedProcedure
     .use(roleGuard)
-    .input(z.object({ id: z.string(), data: projectSchema.partial() }))
+    .input(z.object({ id: z.string(), data: projectUpdateSchema }))
     .mutation(async ({ input, ctx }) => {
       const existing = await ctx.prisma.project.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+      const nextStartDate = input.data.startDate ?? existing.startDate;
+      const nextEndDate = input.data.endDate ?? existing.endDate;
+      if (nextStartDate && nextEndDate && nextEndDate < nextStartDate) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Project end date cannot be before its start date",
+        });
+      }
 
-      const project = await ctx.prisma.project.update({
-        where: { id: input.id },
-        data: input.data,
+      const project = await ctx.prisma.$transaction(async (transaction) => {
+        const updated = await transaction.project.update({
+          where: { id: input.id },
+          data: input.data,
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "PROJECT_UPDATED",
+          entity: "Project",
+          entityId: updated.id,
+        });
+        return updated;
       });
 
-      await audit(ctx.prisma, {
-        companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: "PROJECT_UPDATED",
-        entity: "Project",
-        entityId: project.id,
-      });
-
-      return project;
+      return serializeProjectMoney(project);
     }),
 
   assignFreelancer: protectedProcedure
@@ -143,19 +179,34 @@ export const projectRouter = router({
       });
       if (!project || !freelancer) throw new TRPCError({ code: "NOT_FOUND" });
 
-      return ctx.prisma.projectAssignment.upsert({
-        where: {
-          projectId_freelancerId: {
+      return ctx.prisma.$transaction(async (transaction) => {
+        const assignment = await transaction.projectAssignment.upsert({
+          where: {
+            projectId_freelancerId: {
+              projectId: input.projectId,
+              freelancerId: input.freelancerId,
+            },
+          },
+          update: { role: input.role },
+          create: {
+            companyId: ctx.companyId,
+            projectId: input.projectId,
+            freelancerId: input.freelancerId,
+            role: input.role,
+          },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "PROJECT_FREELANCER_ASSIGNED",
+          entity: "ProjectAssignment",
+          entityId: assignment.id,
+          metadata: {
             projectId: input.projectId,
             freelancerId: input.freelancerId,
           },
-        },
-        update: { role: input.role },
-        create: {
-          projectId: input.projectId,
-          freelancerId: input.freelancerId,
-          role: input.role,
-        },
+        });
+        return assignment;
       });
     }),
 
@@ -168,13 +219,26 @@ export const projectRouter = router({
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await ctx.prisma.projectAssignment.delete({
-        where: {
-          projectId_freelancerId: {
+      await ctx.prisma.$transaction(async (transaction) => {
+        const assignment = await transaction.projectAssignment.delete({
+          where: {
+            projectId_freelancerId: {
+              projectId: input.projectId,
+              freelancerId: input.freelancerId,
+            },
+          },
+        });
+        await audit(transaction, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: "PROJECT_FREELANCER_UNASSIGNED",
+          entity: "ProjectAssignment",
+          entityId: assignment.id,
+          metadata: {
             projectId: input.projectId,
             freelancerId: input.freelancerId,
           },
-        },
+        });
       });
       return { success: true };
     }),
@@ -188,30 +252,49 @@ export const projectRouter = router({
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
       const timesheets = await ctx.prisma.timesheet.findMany({
-        where: { projectId: input.id, status: "APPROVED" },
-        include: { freelancer: true },
+        where: {
+          projectId: input.id,
+          companyId: ctx.companyId,
+          status: "APPROVED",
+        },
       });
 
       const totalHours = timesheets.reduce((sum, t) => sum + t.hours, 0);
       const contracts = await ctx.prisma.contract.findMany({
-        where: { projectId: input.id },
+        where: { projectId: input.id, companyId: ctx.companyId },
       });
       const rateMap = new Map(
-        contracts.map((c) => [c.freelancerId, c.ratePerHour]),
+        contracts.map((contract) => [
+          contract.id,
+          {
+            rate: decimalToNumber(contract.ratePerHour),
+            currency: contract.currency,
+          },
+        ]),
       );
 
-      const totalSpent = timesheets.reduce((sum, t) => {
-        const rate = rateMap.get(t.freelancerId) || 0;
-        return sum + t.hours * rate;
+      let excludedCurrencyEntries = 0;
+      const totalSpent = timesheets.reduce((sum, timesheet) => {
+        const contract = rateMap.get(timesheet.contractId ?? "");
+        if (!contract || contract.currency !== project.currency) {
+          excludedCurrencyEntries += 1;
+          return sum;
+        }
+        return sum + timesheet.hours * contract.rate;
       }, 0);
 
       return {
-        budget: project.budget || 0,
+        budget: project.budget ? decimalToNumber(project.budget) : 0,
         spent: totalSpent,
         totalHours,
-        remaining: (project.budget || 0) - totalSpent,
+        excludedCurrencyEntries,
+        remaining:
+          (project.budget ? decimalToNumber(project.budget) : 0) - totalSpent,
         percentUsed: project.budget
-          ? Math.min(100, Math.round((totalSpent / project.budget) * 100))
+          ? Math.min(
+              100,
+              Math.round((totalSpent / decimalToNumber(project.budget)) * 100),
+            )
           : 0,
       };
     }),
