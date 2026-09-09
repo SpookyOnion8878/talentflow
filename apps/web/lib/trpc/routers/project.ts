@@ -5,8 +5,7 @@ import {
   projectUpdateSchema,
   paginationSchema,
 } from "@repo/validators";
-import { Prisma, decimalToNumber } from "@repo/db";
-import type { ProjectStatus } from "@repo/db";
+import { Prisma, decimalToNumber, ProjectStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { freelancerPublicSelect } from "../../freelancer-access";
 
@@ -27,8 +26,16 @@ export const projectRouter = router({
     .query(async ({ input, ctx }) => {
       const skip = (input.page - 1) * input.limit;
       const where: Prisma.ProjectWhereInput = { companyId: ctx.companyId };
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as ProjectStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(ProjectStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $ProjectStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
 
       const [data, total] = await Promise.all([
         ctx.prisma.project.findMany({

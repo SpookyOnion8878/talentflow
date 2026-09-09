@@ -8,8 +8,8 @@ import {
   canTransition,
   decimalToNumber,
   invoiceTransitions,
+  InvoiceStatus,
 } from "@repo/db";
-import type { InvoiceStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { generateInvoiceNumber } from "@repo/utils";
 import { enqueueAgentJob } from "@repo/agents";
@@ -50,8 +50,16 @@ export const invoiceRouter = router({
     .query(async ({ input, ctx }) => {
       const skip = (input.page - 1) * input.limit;
       const where: Prisma.InvoiceWhereInput = { companyId: ctx.companyId };
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as InvoiceStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(InvoiceStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $InvoiceStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
 
       const [data, total, summaryGroups, totalCount] = await Promise.all([
         ctx.prisma.invoice.findMany({

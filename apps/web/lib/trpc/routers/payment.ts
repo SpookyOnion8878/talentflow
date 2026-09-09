@@ -6,8 +6,8 @@ import {
   canTransition,
   decimalToNumber,
   invoiceTransitions,
+  PaymentStatus,
 } from "@repo/db";
-import type { PaymentStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { freelancerPublicSelect } from "../../freelancer-access";
 import { withSerializableTransaction } from "../../domain/transactions";
@@ -26,8 +26,16 @@ export const paymentRouter = router({
       const where: Prisma.PaymentWhereInput = {
         invoice: { companyId: ctx.companyId },
       };
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as PaymentStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(PaymentStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $PaymentStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
 
       const [data, total, summaryGroups, totalCount] = await Promise.all([
         ctx.prisma.payment.findMany({

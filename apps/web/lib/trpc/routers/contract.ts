@@ -6,8 +6,8 @@ import {
   canTransition,
   contractTransitions,
   decimalToNumber,
+  ContractStatus,
 } from "@repo/db";
-import type { ContractStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { generateContractNumber } from "@repo/utils";
 import { freelancerPublicSelect } from "../../freelancer-access";
@@ -35,8 +35,16 @@ export const contractRouter = router({
     .query(async ({ input, ctx }) => {
       const skip = (input.page - 1) * input.limit;
       const where: Prisma.ContractWhereInput = { companyId: ctx.companyId };
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as ContractStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(ContractStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $ContractStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
 
       const [data, total] = await Promise.all([
         ctx.prisma.contract.findMany({

@@ -6,8 +6,8 @@ import {
   canTransition,
   decimalToNumber,
   timesheetTransitions,
+  TimesheetStatus,
 } from "@repo/db";
-import type { TimesheetStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { enqueueAgentJob } from "@repo/agents";
 import { freelancerPublicSelect } from "../../freelancer-access";
@@ -35,8 +35,16 @@ export const timesheetRouter = router({
       const skip = (input.page - 1) * input.limit;
       const where: Prisma.TimesheetWhereInput = { companyId: ctx.companyId };
 
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as TimesheetStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(TimesheetStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $TimesheetStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
       if (input.freelancerId) where.freelancerId = input.freelancerId;
 
       const [data, total] = await Promise.all([

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import { complianceSchema } from "@repo/validators";
-import { Prisma } from "@repo/db";
-import type { ComplianceStatus } from "@repo/db";
+import { Prisma, ComplianceStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { enqueueAgentJob } from "@repo/agents";
 
@@ -21,8 +20,16 @@ export const complianceRouter = router({
       const where: Prisma.ComplianceRecordWhereInput = {
         freelancer: { companyId: ctx.companyId },
       };
-      if (input.status && input.status !== "ALL")
-        where.status = input.status as ComplianceStatus;
+      if (input.status && input.status !== "ALL") {
+        const parsed = z.nativeEnum(ComplianceStatus).safeParse(input.status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid $ComplianceStatus filter`,
+          });
+        }
+        where.status = parsed.data;
+      }
       if (input.freelancerId) where.freelancerId = input.freelancerId;
 
       const [data, total] = await Promise.all([

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, requireRole, audit } from "../server";
 import { freelancerSchema, paginationSchema } from "@repo/validators";
-import { Prisma, decimalToNumber } from "@repo/db";
-import type { FreelancerStatus } from "@repo/db";
+import { Prisma, decimalToNumber, FreelancerStatus } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import {
   hasRestrictedFinancialMutation,
@@ -12,6 +11,16 @@ import {
 const roleGuard = requireRole("OWNER", "ADMIN", "MANAGER");
 const detailGuard = requireRole("OWNER", "ADMIN", "MANAGER", "FINANCE");
 
+const freelancerSortFields = new Set([
+  "createdAt",
+  "firstName",
+  "lastName",
+  "rating",
+  "status",
+] as const);
+
+type SortField = typeof freelancerSortFields extends Set<infer T> ? T : never;
+
 export const freelancerRouter = router({
   list: protectedProcedure
     .input(paginationSchema.extend({ status: z.string().optional() }))
@@ -19,7 +28,20 @@ export const freelancerRouter = router({
       const { page, limit, search, status, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
+      let statusFilter: FreelancerStatus | undefined;
+      if (status && status !== "ALL") {
+        const parsed = z.nativeEnum(FreelancerStatus).safeParse(status);
+        if (!parsed.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid freelancer status filter",
+          });
+        }
+        statusFilter = parsed.data;
+      }
+
       const where: Prisma.FreelancerWhereInput = { companyId: ctx.companyId };
+      if (statusFilter) where.status = statusFilter;
       if (search) {
         where.OR = [
           { firstName: { contains: search, mode: "insensitive" } },
@@ -27,14 +49,19 @@ export const freelancerRouter = router({
           { email: { contains: search, mode: "insensitive" } },
         ];
       }
-      if (status && status !== "ALL") where.status = status as FreelancerStatus;
 
       const [data, total] = await Promise.all([
         ctx.prisma.freelancer.findMany({
           where,
           skip,
           take: limit,
-          orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+          orderBy: sortBy
+            ? {
+                [freelancerSortFields.has(sortBy as SortField)
+                  ? sortBy
+                  : "createdAt"]: sortOrder,
+              }
+            : { createdAt: "desc" },
           include: {
             _count: {
               select: { contracts: true, timesheets: true, invoices: true },

@@ -6,7 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * only LOCKED jobs older than the cutoff go back to PENDING.
  */
 
-const updateMany = vi.fn(async () => ({ count: 2 }));
+type RecoveryArgs = {
+  where: { status: string; createdAt: { lt: Date } };
+  data: { status: string };
+};
+
+const updateMany = vi.fn(async (_args: RecoveryArgs) => ({ count: 2 }));
 
 vi.mock("@repo/db", () => ({
   Prisma: {
@@ -40,10 +45,7 @@ describe("recoverStaleLockedJobs", () => {
 
     expect(recovered).toBe(2);
     expect(updateMany).toHaveBeenCalledTimes(1);
-    const call = updateMany.mock.calls[0]![0] as {
-      where: { status: string; createdAt: { lt: Date } };
-      data: { status: string };
-    };
+    const call = updateMany.mock.calls[0]![0];
     expect(call.where.status).toBe("LOCKED");
     expect(call.where.createdAt.lt.getTime()).toBeLessThanOrEqual(
       Date.now() - 15 * 60_000,
@@ -55,9 +57,7 @@ describe("recoverStaleLockedJobs", () => {
     const prisma = makePrisma();
     await recoverStaleLockedJobs(prisma);
 
-    const call = updateMany.mock.calls[0]![0] as {
-      where: { createdAt: { lt: Date } };
-    };
+    const call = updateMany.mock.calls[0]![0];
     const cutoff = call.where.createdAt.lt.getTime();
     const expectedWindow = 15 * 60_000;
     // Cutoff must be ~now-15m (allow 5s of test execution drift).
