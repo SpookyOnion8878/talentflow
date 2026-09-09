@@ -128,3 +128,23 @@ export async function processAvailableJobs(
   }
   return { processed: results.length, results };
 }
+
+/**
+ * Returns jobs stuck in LOCKED back to PENDING. A worker that claims a job
+ * and then dies (function timeout, cold-start crash) leaves the job locked
+ * forever — there is no other code path that resets LOCKED.
+ */
+export async function recoverStaleLockedJobs(
+  prisma: PrismaClient,
+  minutes = 15,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - minutes * 60_000);
+  const result = await prisma.agentJob.updateMany({
+    where: {
+      status: "LOCKED",
+      createdAt: { lt: cutoff },
+    },
+    data: { status: "PENDING" },
+  });
+  return result.count;
+}

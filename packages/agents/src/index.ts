@@ -41,6 +41,7 @@ export {
   claimPendingJobs,
   dispatchJob,
   processAvailableJobs,
+  recoverStaleLockedJobs,
 } from "./jobs/queue";
 export {
   ingestCompanyData,

@@ -6,10 +6,14 @@ import {
   processAvailableJobs,
   expireStaleActions,
   recoverStaleClaimedActions,
+  recoverStaleLockedJobs,
 } from "@repo/agents";
 import { authorizeCronRequest } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
+
+/** Serverless function budget must cover the worst case below. */
+export const maxDuration = 60;
 
 /**
  * Runs the internal AgentOps schedule for pg_cron or Vercel Cron.
@@ -42,9 +46,10 @@ export async function GET(request: NextRequest) {
 
   const isWeekly = request.nextUrl.searchParams.get("kind") === "weekly";
 
-  const [expired, recoveredClaims] = await Promise.all([
+  const [expired, recoveredClaims, recoveredJobs] = await Promise.all([
     expireStaleActions(prisma),
     recoverStaleClaimedActions(prisma),
+    recoverStaleLockedJobs(prisma),
   ]);
 
   const configs = await prisma.agentConfig.findMany({
@@ -67,13 +72,14 @@ export async function GET(request: NextRequest) {
     enqueued++;
   }
 
-  const processed = await processAvailableJobs(prisma, { limit: 10 });
+  const processed = await processAvailableJobs(prisma, { limit: 3 });
 
   return NextResponse.json(
     {
       enqueued,
       expiredActions: expired,
       recoveredClaims,
+      recoveredJobs,
       processed: processed.processed,
     },
     { headers: { "Cache-Control": "no-store" } },
