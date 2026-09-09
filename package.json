@@ -16,6 +16,7 @@
     "db:migrate": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:migrate",
     "db:deploy": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:deploy",
     "db:status": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:status",
+    "postinstall": "pnpm --filter @repo/db db:generate",
     "prepare": "husky"
   },
   "devDependencies": {
