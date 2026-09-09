@@ -3,6 +3,17 @@ import { hashPassword } from "@repo/utils";
 
 const prisma = new PrismaClient();
 
+// Demo credentials are only available by default during local development.
+// Shared or production environments must provide an explicit secret.
+const configuredDemoPassword = process.env.SEED_DEMO_PASSWORD?.trim();
+if (!configuredDemoPassword && process.env.NODE_ENV !== "development") {
+  throw new Error(
+    "SEED_DEMO_PASSWORD must be set when seeding outside development",
+  );
+}
+const DEMO_PASSWORD = configuredDemoPassword ?? "password123";
+const demoPasswordHash = hashPassword(DEMO_PASSWORD);
+
 const DAY = 86400000;
 
 async function main() {
@@ -11,45 +22,45 @@ async function main() {
   // ─── Users ───
   const admin = await prisma.user.upsert({
     where: { email: "admin@talentflow.dev" },
-    update: {},
+    update: { password: demoPasswordHash, role: "ADMIN" },
     create: {
       email: "admin@talentflow.dev",
       name: "Admin User",
       role: "ADMIN",
-      password: hashPassword("password123"),
+      password: demoPasswordHash,
     },
   });
 
   const manager = await prisma.user.upsert({
     where: { email: "manager@talentflow.dev" },
-    update: {},
+    update: { password: demoPasswordHash, role: "MANAGER" },
     create: {
       email: "manager@talentflow.dev",
       name: "Manager User",
       role: "MANAGER",
-      password: hashPassword("password123"),
+      password: demoPasswordHash,
     },
   });
 
   const finance = await prisma.user.upsert({
     where: { email: "finance@talentflow.dev" },
-    update: {},
+    update: { password: demoPasswordHash, role: "FINANCE" },
     create: {
       email: "finance@talentflow.dev",
       name: "Finance User",
       role: "FINANCE",
-      password: hashPassword("password123"),
+      password: demoPasswordHash,
     },
   });
 
   const viewer = await prisma.user.upsert({
     where: { email: "viewer@talentflow.dev" },
-    update: {},
+    update: { password: demoPasswordHash, role: "VIEWER" },
     create: {
       email: "viewer@talentflow.dev",
       name: "Viewer User",
       role: "VIEWER",
-      password: hashPassword("password123"),
+      password: demoPasswordHash,
     },
   });
 
@@ -1097,16 +1108,11 @@ async function main() {
   });
 
   console.log("Seed completed.");
-  console.log("  Admin login:    admin@talentflow.dev  / password123  (OWNER)");
-  console.log(
-    "  Manager login:  manager@talentflow.dev / password123  (MANAGER)",
-  );
-  console.log(
-    "  Finance login:  finance@talentflow.dev / password123  (FINANCE)",
-  );
-  console.log(
-    "  Viewer login:   viewer@talentflow.dev  / password123  (VIEWER)",
-  );
+  if (process.env.NODE_ENV === "development") {
+    console.log("  Demo users are available for local development.");
+  } else {
+    console.log("  Demo users seeded; credentials are not displayed.");
+  }
 }
 
 main()

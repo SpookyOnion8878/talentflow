@@ -22,18 +22,18 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  memberships   Membership[]
-  freelancer    Freelancer?
-  auditLogs     AuditLog[]
-  createdContracts Contract[] @relation("ContractCreator")
-  signedContracts  Contract[] @relation("ContractSigner")
-  submittedTimesheets Timesheet[] @relation("TimesheetSubmitter")
-  approvals     Timesheet[] @relation("TimesheetApprover")
-  verifiedCompliance ComplianceRecord[] @relation("ComplianceVerifier")
-  notifications Notification[]
-  approvedAgentActions AgentAction[] @relation("AgentActionApprover")
+  accounts             Account[]
+  sessions             Session[]
+  memberships          Membership[]
+  freelancer           Freelancer?
+  auditLogs            AuditLog[]
+  createdContracts     Contract[]         @relation("ContractCreator")
+  signedContracts      Contract[]         @relation("ContractSigner")
+  submittedTimesheets  Timesheet[]        @relation("TimesheetSubmitter")
+  approvals            Timesheet[]        @relation("TimesheetApprover")
+  verifiedCompliance   ComplianceRecord[] @relation("ComplianceVerifier")
+  notifications        Notification[]
+  approvedAgentActions AgentAction[]      @relation("AgentActionApprover")
 
   @@map("users")
 }
@@ -90,26 +90,26 @@ model VerificationToken {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 model Company {
-  id          String      @id @default(cuid())
-  name        String
-  slug        String      @unique
-  logo        String?
-  website     String?
-  industry    String?
-  plan        CompanyPlan @default(FREE)
-  settings    Json        @default("{}")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  logo      String?
+  website   String?
+  industry  String?
+  plan      CompanyPlan @default(FREE)
+  settings  Json        @default("{}")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  memberships Membership[]
-  freelancers Freelancer[]
-  projects    Project[]
-  contracts   Contract[]
-  invoices    Invoice[]
-  auditLogs   AuditLog[]
-  agentJobs   AgentJob[]
-  agentRuns   AgentRun[]
-  agentConfigs AgentConfig[]
+  memberships     Membership[]
+  freelancers     Freelancer[]
+  projects        Project[]
+  contracts       Contract[]
+  invoices        Invoice[]
+  auditLogs       AuditLog[]
+  agentJobs       AgentJob[]
+  agentRuns       AgentRun[]
+  agentConfigs    AgentConfig[]
   agentEmbeddings AgentEmbedding[]
 
   @@map("companies")
@@ -122,12 +122,12 @@ enum CompanyPlan {
 }
 
 model Membership {
-  id        String         @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
   companyId String
-  role      MembershipRole @default(VIEWER)
+  role      MembershipRole   @default(VIEWER)
   status    MembershipStatus @default(ACTIVE)
-  invitedAt DateTime       @default(now())
+  invitedAt DateTime         @default(now())
   joinedAt  DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,14 +180,15 @@ model Freelancer {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contracts         Contract[]
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contracts          Contract[]
   projectAssignments ProjectAssignment[]
-  timesheets        Timesheet[]
-  invoices          Invoice[]
-  complianceRecords ComplianceRecord[]
+  timesheets         Timesheet[]
+  invoices           Invoice[]
+  complianceRecords  ComplianceRecord[]
 
+  @@unique([id, companyId])
   @@index([companyId])
   @@map("freelancers")
 }
@@ -209,18 +210,19 @@ model Project {
   name        String
   description String?       @db.Text
   status      ProjectStatus @default(ACTIVE)
-  budget      Float?
+  budget      Decimal?      @db.Decimal(19, 4)
   currency    String        @default("USD")
   startDate   DateTime?
   endDate     DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assignments  ProjectAssignment[]
-  contracts    Contract[]
-  timesheets   Timesheet[]
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments ProjectAssignment[]
+  contracts   Contract[]
+  timesheets  Timesheet[]
 
+  @@unique([id, companyId])
   @@index([companyId])
   @@map("projects")
 }
@@ -234,18 +236,20 @@ enum ProjectStatus {
 }
 
 model ProjectAssignment {
-  id          String   @id @default(cuid())
-  projectId   String
+  id           String    @id @default(cuid())
+  companyId    String
+  projectId    String
   freelancerId String
-  role        String?
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime @default(now())
+  role         String?
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime  @default(now())
 
-  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  freelancer Freelancer @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+  project    Project    @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Cascade)
+  freelancer Freelancer @relation(fields: [freelancerId, companyId], references: [id, companyId], onDelete: Cascade)
 
   @@unique([projectId, freelancerId])
+  @@index([companyId])
   @@map("project_assignments")
 }
 
@@ -261,7 +265,7 @@ model Contract {
   projectId    String?
   title        String
   description  String?        @db.Text
-  ratePerHour  Float
+  ratePerHour  Decimal        @db.Decimal(19, 4)
   currency     String         @default("USD")
   startDate    DateTime
   endDate      DateTime?
@@ -274,14 +278,15 @@ model Contract {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  freelancer Freelancer @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
-  project    Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  signer     User?      @relation("ContractSigner", fields: [signedBy], references: [id])
-  creator    User       @relation("ContractCreator", fields: [createdBy], references: [id])
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  freelancer Freelancer  @relation(fields: [freelancerId, companyId], references: [id, companyId], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  signer     User?       @relation("ContractSigner", fields: [signedBy], references: [id])
+  creator    User        @relation("ContractCreator", fields: [createdBy], references: [id])
   invoices   Invoice[]
   timesheets Timesheet[]
 
+  @@unique([id, companyId])
   @@index([companyId])
   @@index([freelancerId])
   @@map("contracts")
@@ -302,28 +307,30 @@ enum ContractStatus {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 model Timesheet {
-  id           String          @id @default(cuid())
-  freelancerId String
-  contractId   String?
-  projectId    String?
+  id            String          @id @default(cuid())
+  companyId     String
+  freelancerId  String
+  contractId    String?
+  projectId     String?
   submittedById String
-  date         DateTime        @db.Date
-  hours        Float
-  description  String?         @db.Text
-  status       TimesheetStatus @default(PENDING)
-  approvedBy   String?
-  approvedAt   DateTime?
-  rejectReason String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  date          DateTime        @db.Date
+  hours         Float
+  description   String?         @db.Text
+  status        TimesheetStatus @default(PENDING)
+  approvedBy    String?
+  approvedAt    DateTime?
+  rejectReason  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  freelancer  Freelancer @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
-  contract    Contract?  @relation(fields: [contractId], references: [id], onDelete: SetNull)
-  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  submitter   User       @relation("TimesheetSubmitter", fields: [submittedById], references: [id])
-  approver    User?      @relation("TimesheetApprover", fields: [approvedBy], references: [id])
+  freelancer Freelancer @relation(fields: [freelancerId, companyId], references: [id, companyId], onDelete: Cascade)
+  contract   Contract?  @relation(fields: [contractId, companyId], references: [id, companyId], onDelete: Restrict)
+  project    Project?   @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  submitter  User       @relation("TimesheetSubmitter", fields: [submittedById], references: [id])
+  approver   User?      @relation("TimesheetApprover", fields: [approvedBy], references: [id])
 
   @@unique([freelancerId, date])
+  @@index([companyId])
   @@index([projectId])
   @@map("timesheets")
 }
@@ -340,28 +347,31 @@ enum TimesheetStatus {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 model Invoice {
-  id           String        @id @default(cuid())
-  invoiceNo    String        @unique
-  companyId    String
-  freelancerId String
-  contractId   String?
-  amount       Float
-  taxAmount    Float         @default(0)
-  totalAmount  Float
-  currency     String        @default("USD")
-  status       InvoiceStatus @default(DRAFT)
-  dueDate      DateTime?
-  paidAt       DateTime?
-  items        Json          @default("[]")
-  notes        String?       @db.Text
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  invoiceNo          String        @unique
+  companyId          String
+  freelancerId       String
+  contractId         String?
+  amount             Decimal       @db.Decimal(19, 4)
+  taxAmount          Decimal       @default(0) @db.Decimal(19, 4)
+  totalAmount        Decimal       @db.Decimal(19, 4)
+  taxRate            Decimal       @default(0.11) @db.Decimal(7, 6)
+  calculationVersion String        @default("invoice-v1")
+  currency           String        @default("USD")
+  status             InvoiceStatus @default(DRAFT)
+  dueDate            DateTime?
+  paidAt             DateTime?
+  items              Json          @default("[]")
+  notes              String?       @db.Text
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  freelancer Freelancer @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
-  contract   Contract?  @relation(fields: [contractId], references: [id], onDelete: SetNull)
-  payment    Payment?
+  freelancer Freelancer @relation(fields: [freelancerId, companyId], references: [id, companyId], onDelete: Cascade)
+  contract   Contract?  @relation(fields: [contractId, companyId], references: [id, companyId], onDelete: Restrict)
+  payments   Payment[]
 
+  @@unique([id, companyId])
   @@index([companyId])
   @@index([freelancerId])
   @@map("invoices")
@@ -381,20 +391,21 @@ enum InvoiceStatus {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 model Payment {
-  id           String        @id @default(cuid())
-  invoiceId    String        @unique
-  amount       Float
-  currency     String        @default("USD")
-  method       PaymentMethod @default(BANK_TRANSFER)
-  status       PaymentStatus @default(PENDING)
-  reference    String?
-  processedAt  DateTime?
-  notes        String?       @db.Text
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String        @id @default(cuid())
+  invoiceId   String
+  amount      Decimal       @db.Decimal(19, 4)
+  currency    String        @default("USD")
+  method      PaymentMethod @default(BANK_TRANSFER)
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  processedAt DateTime?
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
+  @@index([invoiceId, status])
   @@map("payments")
 }
 
@@ -419,18 +430,18 @@ enum PaymentStatus {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 model ComplianceRecord {
-  id           String            @id @default(cuid())
+  id           String           @id @default(cuid())
   freelancerId String
   type         ComplianceType
   title        String
   documentUrl  String?
   expiryDate   DateTime?
-  status       ComplianceStatus  @default(PENDING)
-  notes        String?           @db.Text
+  status       ComplianceStatus @default(PENDING)
+  notes        String?          @db.Text
   verifiedBy   String?
   verifiedAt   DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   freelancer Freelancer @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
   verifier   User?      @relation("ComplianceVerifier", fields: [verifiedBy], references: [id])
@@ -547,15 +558,15 @@ enum AgentActionStatus {
 
 /// Antrian kerja agent (event & cron) berbasis DB.
 model AgentJob {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   companyId   String
   agentType   AgentType
   triggerType AgentTrigger
   status      AgentJobStatus @default(PENDING)
-  runAt       DateTime      @default(now())
-  attempts    Int           @default(0)
-  error       String?       @db.Text
-  createdAt   DateTime      @default(now())
+  runAt       DateTime       @default(now())
+  attempts    Int            @default(0)
+  error       String?        @db.Text
+  createdAt   DateTime       @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -579,7 +590,7 @@ model AgentRun {
   startedAt   DateTime       @default(now())
   finishedAt  DateTime?
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   actions AgentAction[]
 
   @@index([companyId, startedAt])
@@ -606,9 +617,9 @@ model AgentAction {
   run      AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
   approver User?    @relation("AgentActionApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
 
+  @@unique([tool, idempotencyKey])
   @@index([status, createdAt])
   @@index([runId])
-  @@unique([tool, idempotencyKey])
   @@map("agent_actions")
 }
 
@@ -632,13 +643,13 @@ model AgentConfig {
 }
 
 model AgentEmbedding {
-  id         String   @id @default(cuid())
+  id         String                      @id @default(cuid())
   companyId  String
   entityType String
   entityId   String
   content    String
   vector     Unsupported("vector(768)")?
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime                    @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
