@@ -32,3 +32,6 @@ coverage/
 
 # Misc
 *.log
+
+# Editor agent folders
+.cursor/
