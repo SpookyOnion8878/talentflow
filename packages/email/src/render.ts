@@ -4,11 +4,14 @@ import {
   InvoiceReminderEmail,
   WeeklySummaryEmail,
 } from "./templates/agent";
+import { InvoicePaidEmail, InvoiceSentEmail } from "./templates/invoice";
 
 export type EmailTemplateKind =
   | "invoice-reminder"
   | "compliance-warning"
-  | "weekly-summary";
+  | "weekly-summary"
+  | "invoice-sent"
+  | "invoice-paid";
 
 export function renderAgentEmail(
   kind: EmailTemplateKind,
@@ -30,6 +33,14 @@ export function renderAgentEmail(
     case "weekly-summary":
       return renderToString(
         WeeklySummaryEmail(props as Parameters<typeof WeeklySummaryEmail>[0]),
+      );
+    case "invoice-sent":
+      return renderToString(
+        InvoiceSentEmail(props as Parameters<typeof InvoiceSentEmail>[0]),
+      );
+    case "invoice-paid":
+      return renderToString(
+        InvoicePaidEmail(props as Parameters<typeof InvoicePaidEmail>[0]),
       );
   }
 }

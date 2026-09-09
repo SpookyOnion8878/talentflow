@@ -12,7 +12,8 @@ import {
 } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { generateInvoiceNumber } from "@repo/utils";
-import { enqueueAgentJob } from "@repo/agents";
+import { enqueueAgentJob, sendInvoiceNotification } from "@repo/agents";
+import { formatCurrency } from "@repo/utils";
 import { freelancerPublicSelect } from "../../freelancer-access";
 import { withSerializableTransaction } from "../../domain/transactions";
 
@@ -25,6 +26,10 @@ function requireInvoiceTransition(from: string, to: string): void {
       message: `Invoice cannot transition from ${from} to ${to}`,
     });
   }
+}
+
+function formatDueDate(dueDate: Date | null): string {
+  return dueDate ? dueDate.toISOString().slice(0, 10) : "—";
 }
 
 function serializeInvoiceMoney<
@@ -245,6 +250,16 @@ export const invoiceRouter = router({
     .mutation(async ({ input, ctx }) => {
       const invoice = await ctx.prisma.invoice.findFirst({
         where: { id: input.id, companyId: ctx.companyId },
+        select: {
+          id: true,
+          invoiceNo: true,
+          status: true,
+          dueDate: true,
+          totalAmount: true,
+          currency: true,
+          freelancer: { select: { email: true } },
+          company: { select: { name: true } },
+        },
       });
       if (!invoice)
         throw new TRPCError({
@@ -280,6 +295,28 @@ export const invoiceRouter = router({
           where: { id: input.id },
         });
       });
+
+      // Non-blocking user-flow notification: a mail outage must not fail
+      // the status change (the transaction above has already committed).
+      try {
+        await sendInvoiceNotification(ctx.prisma, {
+          kind: "invoice-sent",
+          to: [invoice.freelancer.email].filter(Boolean),
+          subject: `Invoice ${invoice.invoiceNo} sent`,
+          props: {
+            invoiceNo: invoice.invoiceNo,
+            amount: formatCurrency(invoice.totalAmount, invoice.currency),
+            dueDate: formatDueDate(invoice.dueDate),
+            companyName: invoice.company.name,
+            actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/invoices`,
+          },
+        });
+      } catch (notifyError) {
+        console.error(
+          "[invoice] failed to queue invoice-sent email",
+          notifyError,
+        );
+      }
 
       return serializeInvoiceMoney(updated);
     }),
@@ -357,11 +394,45 @@ export const invoiceRouter = router({
           });
           return transaction.invoice.findUniqueOrThrow({
             where: { id: input.id },
+            select: {
+              id: true,
+              invoiceNo: true,
+              status: true,
+              totalAmount: true,
+              currency: true,
+              paidAt: true,
+              freelancer: { select: { email: true } },
+              company: { select: { name: true } },
+            },
           });
         },
       );
 
-      return serializeInvoiceMoney(paid);
+      // Non-blocking settlement notification.
+      try {
+        await sendInvoiceNotification(ctx.prisma, {
+          kind: "invoice-paid",
+          to: [paid.freelancer.email].filter(Boolean),
+          subject: `Invoice ${paid.invoiceNo} paid`,
+          props: {
+            invoiceNo: paid.invoiceNo,
+            amount: formatCurrency(paid.totalAmount, paid.currency),
+            paidAt: (paid.paidAt ?? new Date()).toISOString().slice(0, 10),
+            companyName: paid.company.name,
+            actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/invoices`,
+          },
+        });
+      } catch (notifyError) {
+        console.error(
+          "[invoice] failed to queue invoice-paid email",
+          notifyError,
+        );
+      }
+
+      return {
+        ...paid,
+        totalAmount: decimalToNumber(paid.totalAmount),
+      };
     }),
 
   cancel: protectedProcedure

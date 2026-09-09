@@ -1,5 +1,9 @@
 import type { PrismaClient } from "@repo/db";
-import { renderAgentEmail, sendEmail } from "@repo/email";
+import {
+  renderAgentEmail,
+  sendEmail,
+  type EmailTemplateKind,
+} from "@repo/email";
 import type { ToolContext } from "./types";
 
 /** Lists active owner, administrator, and finance email recipients. */
@@ -42,4 +46,41 @@ export async function sendAgentEmail(
     channels.push(result.channel);
   }
   return { channel: channels[0] ?? "console", to };
+}
+
+/**
+ * User-flow notification (unlike agent emails, which go to internal
+ * finance roles): sends to explicit recipients and never throws — a mail
+ * outage must not fail the business action that produced it.
+ */
+export async function sendInvoiceNotification(
+  prisma: PrismaClient,
+  params: {
+    kind: Extract<EmailTemplateKind, "invoice-sent" | "invoice-paid">;
+    to: string[];
+    subject: string;
+    props: Record<string, string>;
+  },
+): Promise<{ channel: "resend" | "console" | "skip"; sent: number }> {
+  if (params.to.length === 0) {
+    return { channel: "skip", sent: 0 };
+  }
+  const html = renderAgentEmail(params.kind, params.props);
+  let sent = 0;
+  for (const addr of params.to) {
+    try {
+      const result = await sendEmail({
+        to: addr,
+        subject: params.subject,
+        html,
+      });
+      if (result.sent) sent += 1;
+    } catch (error) {
+      console.error(
+        `[invoice-notify] failed to deliver ${params.kind} to ${addr}`,
+        error,
+      );
+    }
+  }
+  return { channel: sent > 0 ? "console" : "skip", sent };
 }

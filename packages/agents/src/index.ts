@@ -18,7 +18,11 @@ export { complianceTools, REQUIRED_ACTIVE_TYPES } from "./tools/compliance";
 export { toolRegistry, getTool } from "./tools/registry";
 export { canApproveTool, evaluateGuard } from "./guards/pipeline";
 export { fetchAgentConfig } from "./config";
-export { sendAgentEmail, emailRecipients } from "./email";
+export {
+  sendAgentEmail,
+  emailRecipients,
+  sendInvoiceNotification,
+} from "./email";
 export * from "./engine/core";
 export * from "./engine/actions";
 export { runReActLoop } from "./engine/loop";

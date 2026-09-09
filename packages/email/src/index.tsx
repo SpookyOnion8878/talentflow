@@ -20,6 +20,8 @@ export {
   WeeklySummaryEmail,
 } from "./templates/agent";
 
+export { InvoiceSentEmail, InvoicePaidEmail } from "./templates/invoice";
+
 interface EmailProps {
   name: string;
   actionUrl: string;
