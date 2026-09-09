@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { StatusBadge } from "@/components/status-badge";
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@repo/ui/status-badge";
+import { EmptyState } from "@repo/ui/empty-state";
+import { PageHeader } from "@repo/ui/page-header";
 import { useToast } from "@/components/toast";
 
 export default function FreelancersPage() {

@@ -1,8 +1,8 @@
 ﻿import { caller } from "@/lib/trpc/caller";
-import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
-import { StatusBadge } from "@/components/status-badge";
-import { StatCard } from "@/components/stat-card";
+import { PageHeader } from "@repo/ui/page-header";
+import { EmptyState } from "@repo/ui/empty-state";
+import { StatusBadge } from "@repo/ui/status-badge";
+import { StatCard } from "@repo/ui/stat-card";
 import { formatCurrency, formatDate } from "@repo/utils";
 
 export const dynamic = "force-dynamic";

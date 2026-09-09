@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Zap, Mail, Lock, ArrowRight } from "lucide-react";
-import { AuthShell } from "@/components/auth-shell";
+import { AuthShell } from "@repo/ui/auth-shell";
 
 function isSafeRedirect(url: string | null): boolean {
   if (!url) return false;

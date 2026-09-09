@@ -19,9 +19,13 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
+    "@repo/utils": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
+  },
+  "peerDependencies": {
+    "next": ">=15"
   }
 }

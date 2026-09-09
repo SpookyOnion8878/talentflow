@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
-import { StatusBadge } from "@/components/status-badge";
+import { PageHeader } from "@repo/ui/page-header";
+import { EmptyState } from "@repo/ui/empty-state";
+import { StatusBadge } from "@repo/ui/status-badge";
 import { formatDate } from "@repo/utils";
 
 export default function AgentActivityPage() {

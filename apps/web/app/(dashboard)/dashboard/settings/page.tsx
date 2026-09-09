@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge } from "@repo/ui/status-badge";
 import { useToast } from "@/components/toast";
 
 const ROLE_LABELS: Record<string, string> = {

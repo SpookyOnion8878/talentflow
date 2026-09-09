@@ -1,5 +1,5 @@
 ﻿import { caller } from "@/lib/trpc/caller";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@repo/ui/page-header";
 import { formatCurrency } from "@repo/utils";
 
 export const dynamic = "force-dynamic";

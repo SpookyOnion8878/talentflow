@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Bot, Send, Sparkles, ArrowRight } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@repo/ui/page-header";
 import type { StoredCopilotSuggestion } from "@repo/agents";
 import { useToast } from "@/components/toast";
 

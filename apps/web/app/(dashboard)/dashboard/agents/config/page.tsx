@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Database, Play, Save } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@repo/ui/page-header";
 import type { AgentType } from "@repo/agents";
 import { useToast } from "@/components/toast";
 

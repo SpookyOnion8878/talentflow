@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { StatusBadge } from "@/components/status-badge";
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@repo/ui/status-badge";
+import { EmptyState } from "@repo/ui/empty-state";
+import { PageHeader } from "@repo/ui/page-header";
 import { formatDate } from "@repo/utils";
 import { useToast } from "@/components/toast";
 

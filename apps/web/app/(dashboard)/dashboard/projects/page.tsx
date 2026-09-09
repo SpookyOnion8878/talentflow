@@ -1,9 +1,9 @@
 ﻿import Link from "next/link";
 import { Users } from "lucide-react";
 import { caller } from "@/lib/trpc/caller";
-import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
-import { StatusBadge } from "@/components/status-badge";
+import { PageHeader } from "@repo/ui/page-header";
+import { EmptyState } from "@repo/ui/empty-state";
+import { StatusBadge } from "@repo/ui/status-badge";
 import { formatCurrency } from "@repo/utils";
 
 export const dynamic = "force-dynamic";

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge } from "@repo/ui/status-badge";
 
 export default function AssignFreelancerPage() {
   const params = useParams<{ id: string }>();

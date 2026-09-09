@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Check, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@repo/ui/page-header";
+import { EmptyState } from "@repo/ui/empty-state";
 import { useToast } from "@/components/toast";
 
 const TOOL_LABELS: Record<string, string> = {

@@ -12,7 +12,7 @@ import {
   Activity,
 } from "lucide-react";
 import { caller } from "@/lib/trpc/caller";
-import { StatCard } from "@/components/stat-card";
+import { StatCard } from "@repo/ui/stat-card";
 import { formatCurrency, formatDateTime } from "@repo/utils";
 
 const ACTIVITY_ICONS = [

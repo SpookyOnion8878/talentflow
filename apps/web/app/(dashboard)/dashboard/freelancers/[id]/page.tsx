@@ -1,8 +1,8 @@
 ﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { caller } from "@/lib/trpc/caller";
-import { StatusBadge } from "@/components/status-badge";
-import { EmptyState } from "@/components/empty-state";
+import { StatusBadge } from "@repo/ui/status-badge";
+import { EmptyState } from "@repo/ui/empty-state";
 import { formatCurrency, formatDate } from "@repo/utils";
 
 export const dynamic = "force-dynamic";
