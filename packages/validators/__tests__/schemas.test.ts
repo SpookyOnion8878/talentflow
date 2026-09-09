@@ -6,6 +6,8 @@ import {
   projectSchema,
   timesheetSchema,
   invoiceSchema,
+  paymentSchema,
+  contractSchema,
   paginationSchema,
 } from "../src/index";
 
@@ -116,5 +118,57 @@ describe("paginationSchema", () => {
   it("rejects limit > 100", () => {
     const result = paginationSchema.safeParse({ limit: 200 });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("financial schemas", () => {
+  it("removes client-provided invoice amounts", () => {
+    const result = invoiceSchema.parse({
+      freelancerId: "clx123456789012345678",
+      currency: "usd",
+      items: [
+        {
+          description: "Consulting",
+          quantity: 2,
+          rate: 50,
+          amount: 1,
+        },
+      ],
+    });
+
+    expect(result.currency).toBe("USD");
+    expect(result.items[0]).toEqual({
+      description: "Consulting",
+      quantity: 2,
+      rate: 50,
+    });
+  });
+
+  it("rejects empty invoices and zero-value payments", () => {
+    expect(
+      invoiceSchema.safeParse({
+        freelancerId: "clx123456789012345678",
+        items: [],
+      }).success,
+    ).toBe(false);
+    expect(
+      paymentSchema.safeParse({
+        invoiceId: "clx123456789012345678",
+        amount: 0,
+        method: "BANK_TRANSFER",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects reversed contract dates", () => {
+    expect(
+      contractSchema.safeParse({
+        freelancerId: "clx123456789012345678",
+        title: "Consulting",
+        ratePerHour: 100,
+        startDate: "2026-08-10",
+        endDate: "2026-08-01",
+      }).success,
+    ).toBe(false);
   });
 });

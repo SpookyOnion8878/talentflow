@@ -21,14 +21,16 @@ export function verifyPassword(password: string, stored: string): boolean {
 
 // ─── Currency Formatting ───
 export function formatCurrency(
-  amount: number,
+  amount: number | string | { toNumber(): number },
   currency: string = "USD",
 ): string {
+  const numericAmount =
+    typeof amount === "object" ? amount.toNumber() : Number(amount);
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
-  }).format(amount);
+  }).format(numericAmount);
 }
 
 // ─── Date Formatting ───

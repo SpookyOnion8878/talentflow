@@ -19,7 +19,10 @@
     "MODEL_FAST",
     "MODEL_DEEP",
     "OLLAMA_BASE_URL",
-    "CRON_SECRET"
+    "AI_EXTERNAL_DATA_PROCESSING",
+    "AI_EXTERNAL_DATA_COMPANY_ALLOWLIST",
+    "CRON_SECRET",
+    "TRUSTED_PROXY"
   ],
   "tasks": {
     "build": {

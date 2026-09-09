@@ -13,6 +13,9 @@
     "db:generate": "dotenv -e ./.env --allow-missing -- turbo run db:generate --filter=@repo/db",
     "db:seed": "dotenv -e ./.env --allow-missing -- turbo run db:seed --filter=@repo/db",
     "db:studio": "dotenv -e ./.env --allow-missing -- turbo run db:studio --filter=@repo/db",
+    "db:migrate": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:migrate",
+    "db:deploy": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:deploy",
+    "db:status": "dotenv -e ./.env --allow-missing -- pnpm --filter @repo/db db:status",
     "prepare": "husky"
   },
   "devDependencies": {

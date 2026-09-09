@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const currencyCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{3}$/, "Currency must be a three-letter ISO 4217 code");
+
+const monetaryInputSchema = z.number().finite().nonnegative().max(1e15);
+
 // ─── Auth Schemas ───
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -38,7 +46,7 @@ export const freelancerSchema = z.object({
   country: z.string().optional(),
   city: z.string().optional(),
   timezone: z.string().optional(),
-  currency: z.string().default("USD"),
+  currency: currencyCodeSchema.default("USD"),
   taxId: z.string().optional(),
   bankName: z.string().optional(),
   bankAccount: z.string().optional(),
@@ -48,29 +56,52 @@ export const freelancerSchema = z.object({
 export type FreelancerInput = z.infer<typeof freelancerSchema>;
 
 // ─── Project Schemas ───
-export const projectSchema = z.object({
-  name: z.string().min(1, "Project name is required"),
-  description: z.string().optional(),
-  budget: z.number().min(0).optional(),
-  currency: z.string().default("USD"),
+const projectFieldsSchema = z.object({
+  name: z.string().trim().min(1, "Project name is required").max(200),
+  description: z.string().max(10_000).optional(),
+  budget: monetaryInputSchema.optional(),
+  currency: currencyCodeSchema.default("USD"),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
 });
 
+const hasValidProjectDateRange = ({
+  startDate,
+  endDate,
+}: {
+  startDate?: Date;
+  endDate?: Date;
+}) => !startDate || !endDate || endDate >= startDate;
+
+export const projectSchema = projectFieldsSchema.refine(
+  ({ startDate, endDate }) => !startDate || !endDate || endDate >= startDate,
+  { message: "Project end date cannot be before its start date" },
+);
+
+export const projectUpdateSchema = projectFieldsSchema
+  .partial()
+  .refine(hasValidProjectDateRange, {
+    message: "Project end date cannot be before its start date",
+  });
+
 export type ProjectInput = z.infer<typeof projectSchema>;
 
 // ─── Contract Schemas ───
-export const contractSchema = z.object({
-  freelancerId: z.string().cuid(),
-  projectId: z.string().cuid().optional(),
-  title: z.string().min(1),
-  description: z.string().optional(),
-  ratePerHour: z.number().min(0),
-  currency: z.string().default("USD"),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date().optional(),
-  terms: z.record(z.unknown()).default({}),
-});
+export const contractSchema = z
+  .object({
+    freelancerId: z.string().cuid(),
+    projectId: z.string().cuid().optional(),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().max(10_000).optional(),
+    ratePerHour: monetaryInputSchema,
+    currency: currencyCodeSchema.default("USD"),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date().optional(),
+    terms: z.record(z.unknown()).default({}),
+  })
+  .refine(({ startDate, endDate }) => !endDate || endDate >= startDate, {
+    message: "Contract end date cannot be before its start date",
+  });
 
 export type ContractInput = z.infer<typeof contractSchema>;
 
@@ -90,17 +121,19 @@ export type TimesheetInput = z.infer<typeof timesheetSchema>;
 export const invoiceSchema = z.object({
   freelancerId: z.string().cuid(),
   contractId: z.string().cuid().optional(),
-  currency: z.string().default("USD"),
+  currency: currencyCodeSchema.default("USD"),
   dueDate: z.coerce.date().optional(),
-  notes: z.string().optional(),
-  items: z.array(
-    z.object({
-      description: z.string(),
-      quantity: z.number().min(0),
-      rate: z.number().min(0),
-      amount: z.number().min(0),
-    }),
-  ),
+  notes: z.string().max(10_000).optional(),
+  items: z
+    .array(
+      z.object({
+        description: z.string().trim().min(1).max(500),
+        quantity: z.number().finite().positive().max(1_000_000),
+        rate: monetaryInputSchema,
+      }),
+    )
+    .min(1, "An invoice must contain at least one item")
+    .max(100),
 });
 
 export type InvoiceInput = z.infer<typeof invoiceSchema>;
@@ -108,8 +141,8 @@ export type InvoiceInput = z.infer<typeof invoiceSchema>;
 // ─── Payment Schemas ───
 export const paymentSchema = z.object({
   invoiceId: z.string().cuid(),
-  amount: z.number().min(0),
-  currency: z.string().default("USD"),
+  amount: z.number().finite().positive().max(1e15),
+  currency: currencyCodeSchema.default("USD"),
   method: z.enum(["BANK_TRANSFER", "STRIPE", "PAYPAL", "WISE", "OTHER"]),
   reference: z.string().optional(),
   notes: z.string().optional(),

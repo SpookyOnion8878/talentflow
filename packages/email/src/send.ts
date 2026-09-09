@@ -1,6 +1,6 @@
 /**
- * Email sending: pakai Resend bila RESEND_API_KEY tersedia,
- * fallback ke console.log (mode dev/gratis tanpa SMTP).
+ * Sends through Resend when configured and falls back to the console in
+ * development environments without SMTP.
  */
 
 export interface SendEmailParams {
