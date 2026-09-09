@@ -5,6 +5,7 @@ import { Database, Play, Save } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { PageHeader } from "@/components/page-header";
 import type { AgentType } from "@repo/agents";
+import { useToast } from "@/components/toast";
 
 const AGENT_META: Record<string, { title: string; description: string }> = {
   BILLING: {
@@ -29,6 +30,8 @@ const AGENT_META: Record<string, { title: string; description: string }> = {
 };
 
 export default function AgentConfigPage() {
+  const toast = useToast();
+
   const { data, isLoading, refetch } = trpc.agents.configList.useQuery();
   const { data: cost } = trpc.agents.costDashboard.useQuery();
   const { data: roleData } = trpc.membership.myRole.useQuery();
@@ -36,15 +39,16 @@ export default function AgentConfigPage() {
     onSuccess: () => refetch(),
   });
   const runNow = trpc.agents.runNow.useMutation({
-    onSuccess: (res) => alert(res.message ?? "Process completed"),
-    onError: (err) => alert(err.message),
+    onSuccess: (res) => toast(res.message ?? "Process completed.", "success"),
+    onError: (err) => toast(err.message, "error"),
   });
   const reindex = trpc.agents.reindexEmbeddings.useMutation({
     onSuccess: (res) =>
-      alert(
+      toast(
         `Embeddings reindexed: ${res.indexed} chunk(s), ${res.deleted} removed.`,
+        "success",
       ),
-    onError: (err) => alert(err.message),
+    onError: (err) => toast(err.message, "error"),
   });
 
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
@@ -63,9 +67,9 @@ export default function AgentConfigPage() {
         monthlyTokenBudget: budget[agentType],
         autoActionThreshold: threshold[agentType] ?? null,
       });
-      alert("Configuration saved.");
+      toast("Configuration saved.", "success");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save");
+      toast(err instanceof Error ? err.message : "Failed to save", "error");
     }
   };
 

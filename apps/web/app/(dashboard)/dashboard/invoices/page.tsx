@@ -7,8 +7,11 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency, formatDate } from "@repo/utils";
+import { useToast } from "@/components/toast";
 
 export default function InvoicesPage() {
+  const toast = useToast();
+
   const [status, setStatus] = useState("ALL");
 
   const { data, isLoading, refetch } = trpc.invoice.list.useQuery({
@@ -28,7 +31,10 @@ export default function InvoicesPage() {
     try {
       await sendMutation.mutateAsync({ id });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send invoice");
+      toast(
+        err instanceof Error ? err.message : "Failed to send invoice",
+        "error",
+      );
     }
   };
 
@@ -37,8 +43,9 @@ export default function InvoicesPage() {
     try {
       await payMutation.mutateAsync({ id });
     } catch (err) {
-      alert(
+      toast(
         err instanceof Error ? err.message : "Failed to mark invoice as paid",
+        "error",
       );
     }
   };

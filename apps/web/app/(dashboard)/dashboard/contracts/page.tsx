@@ -6,8 +6,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency, formatDate } from "@repo/utils";
+import { useToast } from "@/components/toast";
 
 export default function ContractsPage() {
+  const toast = useToast();
+
   const [status, setStatus] = useState("ALL");
 
   const { data, isLoading, refetch } = trpc.contract.list.useQuery({
@@ -28,7 +31,10 @@ export default function ContractsPage() {
     try {
       await signMutation.mutateAsync({ id });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to sign contract");
+      toast(
+        err instanceof Error ? err.message : "Failed to sign contract",
+        "error",
+      );
     }
   };
 
@@ -38,8 +44,9 @@ export default function ContractsPage() {
     try {
       await terminateMutation.mutateAsync({ id });
     } catch (err) {
-      alert(
+      toast(
         err instanceof Error ? err.message : "Failed to terminate contract",
+        "error",
       );
     }
   };

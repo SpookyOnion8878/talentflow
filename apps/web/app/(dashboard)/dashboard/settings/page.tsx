@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { StatusBadge } from "@/components/status-badge";
+import { useToast } from "@/components/toast";
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: "Owner",
@@ -15,6 +16,8 @@ const ROLE_LABELS: Record<string, string> = {
 type MemberRole = "ADMIN" | "MANAGER" | "FINANCE" | "VIEWER";
 
 export default function SettingsPage() {
+  const toast = useToast();
+
   const { data: company, isLoading: companyLoading } =
     trpc.company.get.useQuery();
   const {
@@ -67,7 +70,10 @@ export default function SettingsPage() {
         industry: form.industry,
       });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save settings");
+      toast(
+        err instanceof Error ? err.message : "Failed to save settings",
+        "error",
+      );
     }
   };
 
@@ -75,7 +81,10 @@ export default function SettingsPage() {
     try {
       await roleMutation.mutateAsync({ membershipId, role });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update role");
+      toast(
+        err instanceof Error ? err.message : "Failed to update role",
+        "error",
+      );
     }
   };
 

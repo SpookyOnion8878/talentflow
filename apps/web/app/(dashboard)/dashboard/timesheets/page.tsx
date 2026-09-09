@@ -6,8 +6,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { formatDate } from "@repo/utils";
+import { useToast } from "@/components/toast";
 
 export default function TimesheetsPage() {
+  const toast = useToast();
+
   const [status, setStatus] = useState("ALL");
 
   const { data, isLoading, refetch } = trpc.timesheet.list.useQuery({
@@ -29,13 +32,16 @@ export default function TimesheetsPage() {
     try {
       await approveMutation.mutateAsync({ id });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to approve timesheet");
+      toast(
+        err instanceof Error ? err.message : "Failed to approve timesheet",
+        "error",
+      );
     }
   };
 
   const handleReject = async (id: string) => {
     if (!reason.trim()) {
-      alert("Please provide a reason for rejection");
+      toast("Please provide a reason for rejection", "error");
       return;
     }
     try {
@@ -43,7 +49,10 @@ export default function TimesheetsPage() {
       setRejectingId(null);
       setReason("");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reject timesheet");
+      toast(
+        err instanceof Error ? err.message : "Failed to reject timesheet",
+        "error",
+      );
     }
   };
 

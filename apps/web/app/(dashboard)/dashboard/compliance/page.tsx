@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatDate } from "@repo/utils";
+import { useToast } from "@/components/toast";
 
 const TYPE_LABELS: Record<string, string> = {
   ID_CARD: "ID Card",
@@ -22,6 +23,8 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function CompliancePage() {
+  const toast = useToast();
+
   const [status, setStatus] = useState("ALL");
 
   const { data, isLoading, refetch } = trpc.compliance.list.useQuery({
@@ -41,13 +44,16 @@ export default function CompliancePage() {
     try {
       await verifyMutation.mutateAsync({ id });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to verify document");
+      toast(
+        err instanceof Error ? err.message : "Failed to verify document",
+        "error",
+      );
     }
   };
 
   const handleReject = async (id: string) => {
     if (!reason.trim()) {
-      alert("Please provide a reason");
+      toast("Please provide a reason", "error");
       return;
     }
     try {
@@ -55,7 +61,10 @@ export default function CompliancePage() {
       setRejectingId(null);
       setReason("");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reject document");
+      toast(
+        err instanceof Error ? err.message : "Failed to reject document",
+        "error",
+      );
     }
   };
 

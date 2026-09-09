@@ -5,6 +5,7 @@ import { Check, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { useToast } from "@/components/toast";
 
 const TOOL_LABELS: Record<string, string> = {
   createDraftInvoice: "Create Draft Invoice",
@@ -23,6 +24,8 @@ function ToolName({ tool }: { tool: string }) {
 }
 
 export default function AgentQueuePage() {
+  const toast = useToast();
+
   const { data: actions, isLoading, refetch } = trpc.agents.queue.useQuery();
   const approveMutation = trpc.agents.approve.useMutation({
     onSuccess: () => refetch(),
@@ -38,22 +41,23 @@ export default function AgentQueuePage() {
     setBusyId(id);
     try {
       const res = await approveMutation.mutateAsync({ actionId: id });
-      alert(
+      toast(
         res.deniedReason
           ? `Auto-rejected by guardrail: ${res.deniedReason}`
           : res.executeError
             ? `Action failed to execute: ${res.executeError}`
             : "Action approved & executed.",
+        res.deniedReason || res.executeError ? "error" : "success",
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to approve");
+      toast(err instanceof Error ? err.message : "Failed to approve", "error");
     }
     setBusyId(null);
   };
 
   const handleReject = async (id: string) => {
     if (!reason.trim()) {
-      alert("Please enter a rejection reason.");
+      toast("Please enter a rejection reason.", "error");
       return;
     }
     try {
@@ -61,7 +65,7 @@ export default function AgentQueuePage() {
       setRejectingId(null);
       setReason("");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reject");
+      toast(err instanceof Error ? err.message : "Failed to reject", "error");
     }
   };
 

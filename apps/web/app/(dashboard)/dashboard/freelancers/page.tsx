@@ -6,8 +6,11 @@ import { trpc } from "@/lib/trpc/client";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { useToast } from "@/components/toast";
 
 export default function FreelancersPage() {
+  const toast = useToast();
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -33,7 +36,10 @@ export default function FreelancersPage() {
     try {
       await deleteMutation.mutateAsync({ id });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete freelancer");
+      toast(
+        err instanceof Error ? err.message : "Failed to delete freelancer",
+        "error",
+      );
     }
   };
 

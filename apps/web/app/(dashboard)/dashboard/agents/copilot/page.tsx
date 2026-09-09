@@ -5,6 +5,7 @@ import { Bot, Send, Sparkles, ArrowRight } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { PageHeader } from "@/components/page-header";
 import type { StoredCopilotSuggestion } from "@repo/agents";
+import { useToast } from "@/components/toast";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,6 +21,8 @@ const SUGGESTED = [
 ];
 
 export default function CopilotPage() {
+  const toast = useToast();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,15 +31,16 @@ export default function CopilotPage() {
   const chatMutation = trpc.agents.chat.useMutation();
   const applyMutation = trpc.agents.applySuggestion.useMutation({
     onSuccess: (res) => {
-      alert(
+      toast(
         res.status === "EXECUTED"
           ? "Action executed directly (non-financial/AUTO)."
           : res.status === "PROPOSED"
             ? "Action sent to the Approval Queue for approval."
             : `Rejected by guardrail: ${res.reason}`,
+        res.status === "REJECTED" ? "error" : "success",
       );
     },
-    onError: (err) => alert(err.message),
+    onError: (err) => toast(err.message, "error"),
   });
 
   useEffect(() => {
