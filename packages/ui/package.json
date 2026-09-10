@@ -19,6 +19,8 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-select": "^2.1.6",
     "@repo/utils": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",

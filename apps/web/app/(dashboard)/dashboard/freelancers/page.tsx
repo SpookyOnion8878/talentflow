@@ -6,6 +6,8 @@ import { trpc } from "@/lib/trpc/client";
 import { StatusBadge } from "@repo/ui/status-badge";
 import { EmptyState } from "@repo/ui/empty-state";
 import { PageHeader } from "@repo/ui/page-header";
+import { ConfirmDialog } from "@repo/ui/confirm-dialog";
+import { StatusSelect } from "@repo/ui/status-select";
 import { useToast } from "@/components/toast";
 
 export default function FreelancersPage() {
@@ -13,6 +15,10 @@ export default function FreelancersPage() {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
@@ -31,17 +37,20 @@ export default function FreelancersPage() {
     onSuccess: () => refetch(),
   });
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete freelancer ${name}? This cannot be undone.`)) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id: deleteTarget.id });
+      toast("Freelancer deleted.", "success");
     } catch (err) {
       toast(
         err instanceof Error ? err.message : "Failed to delete freelancer",
         "error",
       );
+    } finally {
+      setDeleteTarget(null);
     }
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -63,17 +72,18 @@ export default function FreelancersPage() {
           placeholder="Search freelancers..."
           className="flex-1 rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
-        <select
+        <StatusSelect
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
-        >
-          <option value="ALL">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="SUSPENDED">Suspended</option>
-          <option value="BLACKLISTED">Blacklisted</option>
-        </select>
+          onChange={setStatus}
+          ariaLabel="Filter by status"
+          options={[
+            { value: "ALL", label: "All Status" },
+            { value: "ACTIVE", label: "Active" },
+            { value: "INACTIVE", label: "Inactive" },
+            { value: "SUSPENDED", label: "Suspended" },
+            { value: "BLACKLISTED", label: "Blacklisted" },
+          ]}
+        />
       </div>
 
       {/* Table */}
@@ -169,7 +179,10 @@ export default function FreelancersPage() {
                       </Link>
                       <button
                         onClick={() =>
-                          handleDelete(f.id, `${f.firstName} ${f.lastName}`)
+                          setDeleteTarget({
+                            id: f.id,
+                            name: `${f.firstName} ${f.lastName}`,
+                          })
                         }
                         className="text-sm font-medium text-red-600 hover:text-red-500"
                       >
@@ -183,6 +196,20 @@ export default function FreelancersPage() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete freelancer?"
+        description={
+          deleteTarget
+            ? `“${deleteTarget.name}” and their records will be permanently removed. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
