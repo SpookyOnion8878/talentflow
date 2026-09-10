@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { SectionCard } from "@repo/ui/section-card";
 
 const SKILL_OPTIONS = [
   "React",
@@ -104,10 +105,10 @@ export default function AddFreelancerPage() {
         >
           &larr; Back to Freelancers
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-text-hi">
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-hi">
           Add New Freelancer
         </h2>
-        <p className="text-sm text-text-mid">
+        <p className="mt-1 text-sm text-text-mid">
           Fill in the details to onboard a new freelancer
         </p>
       </div>
@@ -120,11 +121,11 @@ export default function AddFreelancerPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-text-hi">
-            Personal Information
-          </h3>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <SectionCard
+          title="Personal Information"
+          hint="Required for contract and payment identity."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-text-mid">
                 First Name *
@@ -178,14 +179,11 @@ export default function AddFreelancerPage() {
               />
             </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Location & Currency */}
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-text-hi">
-            Location & Currency
-          </h3>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <SectionCard title="Location & Currency">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-text-mid">
                 Country
@@ -234,12 +232,11 @@ export default function AddFreelancerPage() {
               </select>
             </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Skills */}
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-text-hi">Skills</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
+        <SectionCard title="Skills">
+          <div className="flex flex-wrap gap-2">
             {SKILL_OPTIONS.map((skill) => (
               <button
                 key={skill}
@@ -256,14 +253,15 @@ export default function AddFreelancerPage() {
               </button>
             ))}
           </div>
-        </div>
+        </SectionCard>
 
         {/* Banking & Tax */}
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-text-hi">
-            Banking & Tax Information
-          </h3>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <SectionCard
+          title="Banking & Tax Information"
+          hint="Financial PII — visible to Owner, Admin, and Finance only."
+          restricted
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-text-mid">
                 Bank Name
@@ -301,13 +299,10 @@ export default function AddFreelancerPage() {
               />
             </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Notes */}
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-text-hi">
-            Additional Notes
-          </h3>
+        <SectionCard title="Additional Notes">
           <textarea
             name="notes"
             value={form.notes}
@@ -316,7 +311,7 @@ export default function AddFreelancerPage() {
             className="mt-4 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
             placeholder="Any additional notes about this freelancer..."
           />
-        </div>
+        </SectionCard>
 
         {/* Actions */}
         <div className="flex justify-end gap-3">
