@@ -88,21 +88,21 @@ export default function CopilotPage() {
 
       <div
         ref={scrollRef}
-        className="flex max-h-[60vh] min-h-[320px] flex-col gap-4 overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="flex max-h-[60vh] min-h-[320px] flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-sm"
       >
         {messages.length === 0 && (
           <div className="m-auto text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-gradient">
               <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <p className="mt-3 text-sm text-slate-500">Example questions:</p>
+            <p className="mt-3 text-sm text-text-mid">Example questions:</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {SUGGESTED.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-primary-300 hover:bg-primary-50"
+                  className="rounded-full border border-border bg-bg px-3 py-1.5 text-xs font-medium text-text-mid transition-colors hover:border-primary-300 hover:bg-soft"
                 >
                   {s}
                 </button>
@@ -122,7 +122,7 @@ export default function CopilotPage() {
               className={`max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm shadow-sm ${
                 m.role === "user"
                   ? "bg-primary-600 text-white"
-                  : "border border-slate-200 bg-slate-50 text-slate-800"
+                  : "border border-border bg-bg text-text-hi"
               }`}
             >
               <p>{m.content}</p>
@@ -131,9 +131,9 @@ export default function CopilotPage() {
                   {m.suggestions.map((s, j) => (
                     <div
                       key={j}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2"
                     >
-                      <p className="text-xs text-slate-600">{s.label}</p>
+                      <p className="text-xs text-text-mid">{s.label}</p>
                       <button
                         type="button"
                         disabled={applyMutation.isPending}
@@ -158,7 +158,7 @@ export default function CopilotPage() {
         ))}
 
         {busy && (
-          <div className="flex items-center gap-2 text-xs text-slate-400">
+          <div className="flex items-center gap-2 text-xs text-text-lo">
             <Bot className="h-4 w-4 animate-pulse" />
             Agent is reading the data…
           </div>
@@ -176,7 +176,7 @@ export default function CopilotPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a question… e.g. “how much is unpaid?”"
-          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
+          className="flex-1 rounded-xl border border-border px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
         />
         <button
           type="submit"

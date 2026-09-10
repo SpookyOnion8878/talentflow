@@ -48,20 +48,20 @@ export default function AssignFreelancerPage() {
       <div className="mb-6">
         <Link
           href={`/dashboard/projects/${projectId}`}
-          className="text-sm text-primary-600 hover:text-primary-700"
+          className="text-sm text-link hover:text-primary-700"
         >
           &larr; Back to {project.data?.name ?? "Project"}
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-slate-900">
+        <h2 className="mt-2 text-2xl font-bold text-text-hi">
           Assign Freelancer
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-text-mid">
           Add a freelancer to this project team
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-500/10 p-4 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -71,31 +71,31 @@ export default function AssignFreelancerPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-text-mid">
             Role (optional)
           </label>
           <input
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             placeholder="e.g. Frontend Developer"
           />
         </div>
 
         {freelancers.isLoading ? (
-          <p className="py-8 text-center text-sm text-slate-500">
+          <p className="py-8 text-center text-sm text-text-mid">
             Loading freelancers...
           </p>
         ) : available.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-text-mid">
               No unassigned freelancers available.
             </p>
             <Link
               href="/dashboard/freelancers/new"
-              className="mt-2 inline-block text-sm font-medium text-primary-600 hover:text-primary-500"
+              className="mt-2 inline-block text-sm font-medium text-link hover:text-link"
             >
               + Add a new freelancer
             </Link>
@@ -108,14 +108,14 @@ export default function AssignFreelancerPage() {
                 className="flex items-center justify-between py-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-700">
                     {f.firstName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {f.firstName} {f.lastName}
                     </p>
-                    <p className="text-xs text-slate-500">{f.email}</p>
+                    <p className="text-xs text-text-mid">{f.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

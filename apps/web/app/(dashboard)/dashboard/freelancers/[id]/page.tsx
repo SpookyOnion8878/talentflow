@@ -27,34 +27,34 @@ export default async function FreelancerDetailPage({
       <div>
         <Link
           href="/dashboard/freelancers"
-          className="text-sm text-primary-600 hover:text-primary-700"
+          className="text-sm text-link hover:text-primary-700"
         >
           &larr; Back to Freelancers
         </Link>
       </div>
 
       {/* Profile header */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-700">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-soft text-xl font-bold text-primary-700">
               {freelancer.firstName.charAt(0)}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">
+              <h2 className="text-2xl font-bold text-text-hi">
                 {freelancer.firstName} {freelancer.lastName}
               </h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-text-mid">
                 {freelancer.email}
                 {freelancer.phone ? ` · ${freelancer.phone}` : ""}
                 {freelancer.country ? ` · ${freelancer.country}` : ""}
               </p>
               <div className="mt-2 flex items-center gap-2">
                 <StatusBadge status={freelancer.status} />
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-text-mid">
                   ⭐ {freelancer.rating.toFixed(1)}
                 </span>
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-text-mid">
                   {freelancer.currency}
                 </span>
               </div>
@@ -66,7 +66,7 @@ export default async function FreelancerDetailPage({
           {freelancer.skills.map((skill) => (
             <span
               key={skill}
-              className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700"
+              className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-text-mid"
             >
               {skill}
             </span>
@@ -74,14 +74,14 @@ export default async function FreelancerDetailPage({
         </div>
 
         {freelancer.notes && (
-          <p className="mt-4 text-sm text-slate-600">{freelancer.notes}</p>
+          <p className="mt-4 text-sm text-text-mid">{freelancer.notes}</p>
         )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Contracts */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">Contracts</h3>
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">Contracts</h3>
           {freelancer.contracts.length === 0 ? (
             <EmptyState title="No contracts" />
           ) : (
@@ -92,10 +92,10 @@ export default async function FreelancerDetailPage({
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {c.title}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-mid">
                       {c.contractNo} ·{" "}
                       {formatCurrency(c.ratePerHour, c.currency)}/hr ·{" "}
                       {c.project?.name ?? "No project"}
@@ -109,8 +109,8 @@ export default async function FreelancerDetailPage({
         </div>
 
         {/* Project assignments */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Project Assignments
           </h3>
           {freelancer.projectAssignments.length === 0 ? (
@@ -125,11 +125,11 @@ export default async function FreelancerDetailPage({
                   <div>
                     <Link
                       href={`/dashboard/projects/${a.project.id}`}
-                      className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                      className="text-sm font-medium text-link hover:text-link"
                     >
                       {a.project.name}
                     </Link>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-mid">
                       {a.role ?? "Team member"}
                     </p>
                   </div>
@@ -141,8 +141,8 @@ export default async function FreelancerDetailPage({
         </div>
 
         {/* Timesheets */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Recent Timesheets
           </h3>
           {freelancer.timesheets.length === 0 ? (
@@ -155,10 +155,10 @@ export default async function FreelancerDetailPage({
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {formatDate(t.date)}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-mid">
                       {t.hours}h · {t.project?.name ?? "No project"}
                     </p>
                   </div>
@@ -170,8 +170,8 @@ export default async function FreelancerDetailPage({
         </div>
 
         {/* Compliance */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Compliance Records
           </h3>
           {freelancer.complianceRecords.length === 0 ? (
@@ -184,10 +184,10 @@ export default async function FreelancerDetailPage({
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {r.title}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-mid">
                       {r.expiryDate
                         ? `Expires ${formatDate(r.expiryDate)}`
                         : "No expiry"}
@@ -203,8 +203,8 @@ export default async function FreelancerDetailPage({
 
       {/* Invoices */}
       {freelancer.invoices.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Recent Invoices
           </h3>
           <div className="mt-4 divide-y">
@@ -214,10 +214,10 @@ export default async function FreelancerDetailPage({
                 className="flex items-center justify-between py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-text-hi">
                     {inv.invoiceNo}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-text-mid">
                     {formatDate(inv.createdAt)}
                   </p>
                 </div>

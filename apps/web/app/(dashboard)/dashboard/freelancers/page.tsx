@@ -61,12 +61,12 @@ export default function FreelancersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search freelancers..."
-          className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="flex-1 rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          className="rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
         >
           <option value="ALL">All Status</option>
           <option value="ACTIVE">Active</option>
@@ -78,7 +78,7 @@ export default function FreelancersPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-border bg-surface shadow-card p-8 text-center text-sm text-text-mid">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -87,46 +87,46 @@ export default function FreelancersPage() {
           description="Add your first freelancer to get started"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-bg">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Skills
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Country
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Rating
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Contracts
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-mid">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 bg-surface">
               {data.data.map((f) => (
-                <tr key={f.id} className="hover:bg-slate-50">
+                <tr key={f.id} className="hover:bg-bg">
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-700">
                         {`${f.firstName.charAt(0)}${f.lastName.charAt(0)}`}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-text-hi">
                           {f.firstName} {f.lastName}
                         </p>
-                        <p className="text-xs text-slate-500">{f.email}</p>
+                        <p className="text-xs text-text-mid">{f.email}</p>
                       </div>
                     </div>
                   </td>
@@ -135,35 +135,35 @@ export default function FreelancersPage() {
                       {f.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                          className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-text-mid"
                         >
                           {skill}
                         </span>
                       ))}
                       {f.skills.length > 3 && (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-text-lo">
                           +{f.skills.length - 3}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {f.country ?? "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <StatusBadge status={f.status} />
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     ⭐ {f.rating.toFixed(1)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {f._count.contracts}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <Link
                         href={`/dashboard/freelancers/${f.id}`}
-                        className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                        className="text-sm font-medium text-link hover:text-link"
                       >
                         View
                       </Link>

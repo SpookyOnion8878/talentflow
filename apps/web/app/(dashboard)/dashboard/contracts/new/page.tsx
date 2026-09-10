@@ -63,33 +63,33 @@ export default function GenerateContractPage() {
       <div className="mb-6">
         <Link
           href="/dashboard/contracts"
-          className="text-sm text-primary-600 hover:text-primary-700"
+          className="text-sm text-link hover:text-primary-700"
         >
           &larr; Back to Contracts
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-slate-900">
+        <h2 className="mt-2 text-2xl font-bold text-text-hi">
           Generate New Contract
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-text-mid">
           Create a contract for a freelancer
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-500/10 p-4 text-sm text-red-600">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Contract Details */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Contract Details
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Contract Title *
               </label>
               <input
@@ -97,12 +97,12 @@ export default function GenerateContractPage() {
                 value={form.title}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="Frontend Development Agreement"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Freelancer *
               </label>
               <select
@@ -110,7 +110,7 @@ export default function GenerateContractPage() {
                 value={form.freelancerId}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="">Select freelancer</option>
                 {freelancers?.data.map((f) => (
@@ -121,14 +121,14 @@ export default function GenerateContractPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Project (Optional)
               </label>
               <select
                 name="projectId"
                 value={form.projectId}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="">No specific project</option>
                 {projects?.data.map((p) => (
@@ -142,13 +142,13 @@ export default function GenerateContractPage() {
         </div>
 
         {/* Duration */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Contract Duration
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Start Date *
               </label>
               <input
@@ -157,11 +157,11 @@ export default function GenerateContractPage() {
                 value={form.startDate}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 End Date (Optional)
               </label>
               <input
@@ -169,20 +169,18 @@ export default function GenerateContractPage() {
                 type="date"
                 value={form.endDate}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
           </div>
         </div>
 
         {/* Payment Terms */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
-            Payment Terms
-          </h3>
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">Payment Terms</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Rate per Hour *
               </label>
               <input
@@ -193,12 +191,12 @@ export default function GenerateContractPage() {
                 value={form.ratePerHour}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="100.00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-text-mid">
                 Currency *
               </label>
               <select
@@ -206,7 +204,7 @@ export default function GenerateContractPage() {
                 value={form.currency}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
               >
                 <option value="USD">USD - US Dollar</option>
                 <option value="EUR">EUR - Euro</option>
@@ -219,8 +217,8 @@ export default function GenerateContractPage() {
         </div>
 
         {/* Description */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-text-hi">
             Contract Description
           </h3>
           <textarea
@@ -228,7 +226,7 @@ export default function GenerateContractPage() {
             value={form.description}
             onChange={handleChange}
             rows={5}
-            className="mt-4 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            className="mt-4 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
             placeholder="Describe the scope of work, deliverables, and any special terms..."
           />
         </div>
@@ -237,7 +235,7 @@ export default function GenerateContractPage() {
         <div className="flex items-center justify-end gap-4">
           <Link
             href="/dashboard/contracts"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text-mid hover:bg-bg"
           >
             Cancel
           </Link>

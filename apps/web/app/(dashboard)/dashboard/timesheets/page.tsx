@@ -75,7 +75,7 @@ export default function TimesheetsPage() {
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               status === s
                 ? "bg-primary-600 text-white"
-                : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                : "border border-border text-text-mid hover:bg-bg"
             }`}
           >
             {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -89,7 +89,7 @@ export default function TimesheetsPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-border bg-surface shadow-card p-8 text-center text-sm text-text-mid">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -102,26 +102,26 @@ export default function TimesheetsPage() {
           {data.data.map((t) => (
             <div
               key={t.id}
-              className="rounded-xl border border-slate-200 bg-white shadow-card p-5 shadow-sm"
+              className="rounded-xl border border-border bg-surface shadow-card p-5 shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-700">
                     {t.freelancer.firstName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {t.freelancer.firstName} {t.freelancer.lastName}
-                      <span className="ml-2 text-xs font-normal text-slate-500">
+                      <span className="ml-2 text-xs font-normal text-text-mid">
                         {formatDate(t.date)}
                       </span>
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-mid">
                       {t.project?.name ?? "No project"} • {t.hours}h
                       {t.contract && ` • ${t.contract.contractNo}`}
                     </p>
                     {t.description && (
-                      <p className="mt-1 text-xs text-slate-600">
+                      <p className="mt-1 text-xs text-text-mid">
                         {t.description}
                       </p>
                     )}
@@ -143,7 +143,7 @@ export default function TimesheetsPage() {
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="Reason for rejection..."
-                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                        className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                         autoFocus
                       />
                       <button
@@ -157,7 +157,7 @@ export default function TimesheetsPage() {
                           setRejectingId(null);
                           setReason("");
                         }}
-                        className="rounded-lg border px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                        className="rounded-lg border px-4 py-2 text-sm text-text-mid hover:bg-bg"
                       >
                         Cancel
                       </button>
@@ -166,7 +166,7 @@ export default function TimesheetsPage() {
                     <>
                       <button
                         onClick={() => setRejectingId(t.id)}
-                        className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-500/10"
                       >
                         Reject
                       </button>

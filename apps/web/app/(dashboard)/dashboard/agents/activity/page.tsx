@@ -37,7 +37,7 @@ export default function AgentActivityPage() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          className="rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
         >
           <option value="">All statuses</option>
           <option value="SUCCEEDED">SUCCEEDED</option>
@@ -47,16 +47,16 @@ export default function AgentActivityPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading history…</p>
+        <p className="text-sm text-text-mid">Loading history…</p>
       ) : runs.length === 0 ? (
         <EmptyState
           title="No activity yet"
           description="Agent runs will appear here after a cron or chat is triggered."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-border bg-bg text-xs uppercase tracking-wide text-text-mid">
               <tr>
                 <th className="px-4 py-3">Time</th>
                 <th className="px-4 py-3">Agent</th>
@@ -68,29 +68,27 @@ export default function AgentActivityPage() {
                 <th className="px-4 py-3 text-right">Token</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {runs.map((run) => (
-                <tr key={run.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-3 text-slate-600">
+                <tr key={run.id} className="hover:bg-bg/60">
+                  <td className="px-4 py-3 text-text-mid">
                     {formatDate(run.startedAt)}
                   </td>
                   <td className="px-4 py-3 font-medium">{run.agentType}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {run.triggerType}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-text-mid">{run.triggerType}</td>
+                  <td className="px-4 py-3 text-text-mid">
                     {run.intent ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td className="px-4 py-3 text-text-mid">
                     {run.model ?? "—"}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={run.status} />
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-500">
+                  <td className="px-4 py-3 text-right text-text-mid">
                     {run._count.actions}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-500">
+                  <td className="px-4 py-3 text-right text-text-mid">
                     {run.totalTokens.toLocaleString()}
                   </td>
                 </tr>
@@ -102,7 +100,7 @@ export default function AgentActivityPage() {
 
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">
+          <span className="text-text-mid">
             Page {meta.page} of {meta.totalPages} ({meta.total} runs)
           </span>
           <div className="flex gap-2">
@@ -110,7 +108,7 @@ export default function AgentActivityPage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium disabled:opacity-40"
+              className="rounded-lg border border-border px-3 py-1.5 font-medium disabled:opacity-40"
             >
               ← Previous
             </button>
@@ -118,7 +116,7 @@ export default function AgentActivityPage() {
               type="button"
               disabled={page >= meta.totalPages}
               onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium disabled:opacity-40"
+              className="rounded-lg border border-border px-3 py-1.5 font-medium disabled:opacity-40"
             >
               Next →
             </button>

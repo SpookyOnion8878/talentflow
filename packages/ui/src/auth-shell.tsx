@@ -9,7 +9,7 @@ const highlights = [
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-bg">
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-sidebar p-12 lg:flex">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -38,13 +38,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             {highlights.map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary-400" />
-                <span className="text-sm text-slate-300">{item}</span>
+                <span className="text-sm text-text-lo">{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="relative text-xs text-slate-500">
+        <p className="relative text-xs text-text-mid">
           © {new Date().getFullYear()} TalentFlow. All rights reserved.
         </p>
       </div>

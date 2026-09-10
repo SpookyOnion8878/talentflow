@@ -63,7 +63,7 @@ export default function ContractsPage() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          className="rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
         >
           <option value="ALL">All Status</option>
           <option value="DRAFT">Draft</option>
@@ -77,7 +77,7 @@ export default function ContractsPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-border bg-surface shadow-card p-8 text-center text-sm text-text-mid">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -86,46 +86,46 @@ export default function ContractsPage() {
           description="Generate your first contract"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-bg">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Contract
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Freelancer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Rate
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Period
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-mid">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 bg-surface">
               {data.data.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
+                <tr key={c.id} className="hover:bg-bg">
                   <td className="whitespace-nowrap px-6 py-4">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-text-hi">
                       {c.title}
                     </p>
-                    <p className="text-xs text-slate-500">{c.contractNo}</p>
+                    <p className="text-xs text-text-mid">{c.contractNo}</p>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {c.freelancer.firstName} {c.freelancer.lastName}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {formatCurrency(c.ratePerHour, c.currency)}/hr
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {formatDate(c.startDate)}
                     {c.endDate ? ` → ${formatDate(c.endDate)}` : ""}
                   </td>
@@ -137,7 +137,7 @@ export default function ContractsPage() {
                       {["DRAFT", "SENT"].includes(c.status) && (
                         <button
                           onClick={() => handleSign(c.id)}
-                          className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                          className="text-sm font-medium text-link hover:text-link"
                         >
                           Sign
                         </button>

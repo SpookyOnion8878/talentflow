@@ -34,15 +34,15 @@ const ICONS: Record<ToastKind, typeof CheckCircle2> = {
 };
 
 const STYLES: Record<ToastKind, string> = {
-  success: "border-emerald-200 bg-white text-slate-800",
-  error: "border-red-200 bg-white text-slate-800",
-  info: "border-slate-200 bg-white text-slate-800",
+  success: "border-emerald-200 bg-surface text-text-hi",
+  error: "border-red-200 bg-surface text-text-hi",
+  info: "border-border bg-surface text-text-hi",
 };
 
 const ICON_STYLES: Record<ToastKind, string> = {
   success: "text-emerald-600",
   error: "text-red-500",
-  info: "text-slate-500",
+  info: "text-text-mid",
 };
 
 let nextId = 1;

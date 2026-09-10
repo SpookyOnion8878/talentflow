@@ -105,7 +105,7 @@ export default function CompliancePage() {
         <StatCard
           label="Expired"
           value={data?.summary.expired ?? 0}
-          color="text-red-600 bg-red-50"
+          color="text-red-600 bg-red-500/10"
         />
         <StatCard
           label="Expiring Soon (30d)"
@@ -116,7 +116,7 @@ export default function CompliancePage() {
 
       {/* Alert Banner */}
       {attentionCount > 0 && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="rounded-xl border border-red-200 bg-red-500/10 p-4">
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
               <TriangleAlert className="h-4 w-4 text-red-600" />
@@ -139,7 +139,7 @@ export default function CompliancePage() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          className="rounded-lg border border-border px-4 py-2 text-sm focus:border-primary-500 focus:outline-none"
         >
           <option value="ALL">All Status</option>
           <option value="PENDING">Pending</option>
@@ -150,7 +150,7 @@ export default function CompliancePage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-card p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-border bg-surface shadow-card p-8 text-center text-sm text-text-mid">
           Loading...
         </div>
       ) : !data || data.data.length === 0 ? (
@@ -159,45 +159,45 @@ export default function CompliancePage() {
           description="Upload documents to start tracking compliance"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-bg">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Freelancer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Document
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Expiry
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-mid">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 bg-surface">
               {data.data.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                <tr key={r.id} className="hover:bg-bg">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-text-hi">
                     {r.freelancer.firstName} {r.freelancer.lastName}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs text-text-mid">
                       {TYPE_LABELS[r.type] ?? r.type}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {r.title}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {r.expiryDate ? (
                       <span
                         className={
@@ -226,7 +226,7 @@ export default function CompliancePage() {
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Reason..."
-                                className="w-40 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
+                                className="w-40 rounded-lg border border-border px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
                                 autoFocus
                               />
                               <button
@@ -246,7 +246,7 @@ export default function CompliancePage() {
                           )}
                           <button
                             onClick={() => handleVerify(r.id)}
-                            className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                            className="text-sm font-medium text-link hover:text-link"
                           >
                             Verify
                           </button>

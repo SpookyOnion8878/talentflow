@@ -31,7 +31,7 @@ function ActivityIcon({ type }: { type: string }) {
   const match = ACTIVITY_ICONS.find((a) => a.key === type);
   const Icon = match?.icon ?? Activity;
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft text-link">
       <Icon className="h-4 w-4" />
     </div>
   );
@@ -87,54 +87,54 @@ export default async function DashboardPage() {
           label="Active Projects"
           value={stats.stats.activeProjects}
           hint={`${stats.stats.projects} total`}
-          color="text-emerald-600 bg-emerald-50"
+          color="text-emerald-600 bg-emerald-500/10"
         />
         <StatCard
           label="Pending Approvals"
           value={stats.stats.pendingTimesheets}
           hint={`${stats.stats.pendingInvoices} invoices not yet paid`}
-          color="text-amber-600 bg-amber-50"
+          color="text-amber-600 bg-amber-500/10"
         />
         <StatCard
           label="Monthly Spend"
           value={monthlySpendLabel}
-          color="text-violet-600 bg-violet-50"
+          color="text-violet-600 bg-violet-500/10"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Budget Overview */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-slate-900">
+            <h3 className="text-base font-semibold text-text-hi">
               Budget Overview
             </h3>
             <Link
               href="/dashboard/projects"
-              className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-500"
+              className="text-sm font-medium text-link transition-colors hover:text-link"
             >
               View all
             </Link>
           </div>
           <div className="mt-5 space-y-5">
             {stats.budgetOverview.length === 0 && (
-              <p className="text-sm text-slate-500">No active projects yet.</p>
+              <p className="text-sm text-text-mid">No active projects yet.</p>
             )}
             {stats.budgetOverview.map((p) => (
               <div key={p.id}>
                 <div className="flex justify-between text-sm">
                   <Link
                     href={`/dashboard/projects/${p.id}`}
-                    className="font-medium text-slate-700 transition-colors hover:text-primary-600"
+                    className="font-medium text-text-mid transition-colors hover:text-link"
                   >
                     {p.name}
                   </Link>
-                  <span className="text-slate-600">
+                  <span className="text-text-mid">
                     {formatCurrency(p.spent, p.currency)} /{" "}
                     {formatCurrency(p.budget, p.currency)}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
                     className={`h-full rounded-full ${
                       p.percentUsed > 90
@@ -162,47 +162,45 @@ export default async function DashboardPage() {
 
         {/* Compliance + Finance Snapshot */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-            <h3 className="text-base font-semibold text-slate-900">Finance</h3>
+          <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+            <h3 className="text-base font-semibold text-text-hi">Finance</h3>
             <div className="mt-5 space-y-5">
               <div>
-                <p className="text-sm text-slate-500">Outstanding</p>
-                <p className="mt-0.5 text-xl font-bold text-slate-900">
+                <p className="text-sm text-text-mid">Outstanding</p>
+                <p className="mt-0.5 text-xl font-bold text-text-hi">
                   {outstandingLabel}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Paid</p>
+                <p className="text-sm text-text-mid">Total Paid</p>
                 <p className="mt-0.5 text-xl font-bold text-emerald-600">
                   {paidLabel}
                 </p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-            <h3 className="text-base font-semibold text-slate-900">
-              Compliance
-            </h3>
+          <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+            <h3 className="text-base font-semibold text-text-hi">Compliance</h3>
             <div className="mt-5 space-y-5">
               <div>
-                <p className="text-sm text-slate-500">Pending review</p>
+                <p className="text-sm text-text-mid">Pending review</p>
                 <p
                   className={`mt-0.5 text-xl font-bold ${
                     stats.stats.compliancePending > 0
                       ? "text-amber-600"
-                      : "text-slate-900"
+                      : "text-text-hi"
                   }`}
                 >
                   {stats.stats.compliancePending}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Expired</p>
+                <p className="text-sm text-text-mid">Expired</p>
                 <p
                   className={`mt-0.5 text-xl font-bold ${
                     stats.stats.complianceExpired > 0
                       ? "text-red-600"
-                      : "text-slate-900"
+                      : "text-text-hi"
                   }`}
                 >
                   {stats.stats.complianceExpired}
@@ -214,21 +212,21 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-text-hi">
             Recent Activity
           </h3>
           <Link
             href="/dashboard/reports"
-            className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-500"
+            className="text-sm font-medium text-link transition-colors hover:text-link"
           >
             Reports
           </Link>
         </div>
-        <div className="mt-4 divide-y divide-slate-100">
+        <div className="mt-4 divide-y divide-border">
           {activity.length === 0 && (
-            <p className="py-3 text-sm text-slate-500">No activity yet.</p>
+            <p className="py-3 text-sm text-text-mid">No activity yet.</p>
           )}
           {activity.map((entry) => (
             <div
@@ -238,13 +236,13 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-3">
                 <ActivityIcon type={entry.type} />
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-text-hi">
                     {entry.action}
                   </p>
-                  <p className="text-xs text-slate-500">{entry.user}</p>
+                  <p className="text-xs text-text-mid">{entry.user}</p>
                 </div>
               </div>
-              <span className="shrink-0 text-xs text-slate-400">
+              <span className="shrink-0 text-xs text-text-lo">
                 {formatDateTime(entry.createdAt)}
               </span>
             </div>

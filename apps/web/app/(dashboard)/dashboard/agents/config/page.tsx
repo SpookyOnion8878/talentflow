@@ -79,7 +79,7 @@ export default function AgentConfigPage() {
     runs.find((r) => r.agentType === agentType);
 
   if (isLoading) {
-    return <p className="text-sm text-slate-500">Loading configuration…</p>;
+    return <p className="text-sm text-text-mid">Loading configuration…</p>;
   }
 
   return (
@@ -90,13 +90,13 @@ export default function AgentConfigPage() {
       />
 
       {!canEdit && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded-lg border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
           Read-only mode — only OWNER/ADMIN can change agent configuration.
         </p>
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-text-mid">
           Semantic search index (RAG) — freelancers, projects, invoices, and
           compliance records are embedded for the Ops Copilot chat.
         </p>
@@ -104,19 +104,19 @@ export default function AgentConfigPage() {
           type="button"
           onClick={() => reindex.mutate()}
           disabled={reindex.isPending}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-text-mid hover:bg-bg disabled:opacity-40"
         >
           <Database className="h-4 w-4" />
           Reindex Embeddings
         </button>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-900">
+          <h3 className="font-semibold text-text-hi">
             Token usage (this month)
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-text-mid">
             Total: {(cost?.monthTotal ?? 0).toLocaleString()} tokens
           </p>
         </div>
@@ -124,19 +124,17 @@ export default function AgentConfigPage() {
           {(cost?.usage ?? []).map((u) => (
             <div key={u.agentType}>
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-700">
-                  {u.agentType}
-                </span>
+                <span className="font-medium text-text-mid">{u.agentType}</span>
                 <span
                   className={
-                    u.alert ? "font-semibold text-red-600" : "text-slate-500"
+                    u.alert ? "font-semibold text-red-600" : "text-text-mid"
                   }
                 >
                   {u.used.toLocaleString()} / {u.budget.toLocaleString()} tokens
                   ({u.percent}%)
                 </span>
               </div>
-              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-2">
                 <div
                   className={
                     u.alert
@@ -155,24 +153,24 @@ export default function AgentConfigPage() {
             </div>
           ))}
           {(cost?.usage ?? []).length === 0 && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-text-mid">
               No agent configurations yet.
             </p>
           )}
         </div>
         {(cost?.weekly ?? []).length > 0 && (
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <div className="mt-5 border-t border-border pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-lo">
               Last weeks
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {cost!.weekly.map((w) => (
                 <div
                   key={w.weekStart}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                  className="rounded-lg border border-border px-3 py-2 text-xs"
                 >
-                  <p className="font-medium text-slate-700">{w.weekStart}</p>
-                  <p className="text-slate-500">
+                  <p className="font-medium text-text-mid">{w.weekStart}</p>
+                  <p className="text-text-mid">
                     {w.total.toLocaleString()} tokens
                   </p>
                 </div>
@@ -195,14 +193,14 @@ export default function AgentConfigPage() {
           return (
             <div
               key={config.agentType}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-border bg-surface p-5 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-slate-900">
+                  <h3 className="font-semibold text-text-hi">
                     {meta?.title ?? config.agentType}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-text-mid">
                     {meta?.description ?? ""}
                   </p>
                 </div>
@@ -217,14 +215,14 @@ export default function AgentConfigPage() {
                         [config.agentType]: e.target.checked,
                       }))
                     }
-                    className="h-4 w-4 rounded border-slate-300 accent-primary-600"
+                    className="h-4 w-4 rounded border-border accent-primary-600"
                   />
                   Active
                 </label>
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="block text-xs font-medium text-slate-500">
+                <label className="block text-xs font-medium text-text-mid">
                   Execution mode
                   <select
                     value={curMode}
@@ -237,13 +235,13 @@ export default function AgentConfigPage() {
                           | "AUTO",
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-50"
                   >
                     <option value="PROPOSE">PROPOSE (human approval)</option>
                     <option value="AUTO">AUTO (execute directly)</option>
                   </select>
                 </label>
-                <label className="block text-xs font-medium text-slate-500">
+                <label className="block text-xs font-medium text-text-mid">
                   Token budget / month
                   <input
                     type="number"
@@ -259,12 +257,12 @@ export default function AgentConfigPage() {
                         [config.agentType]: Number(e.target.value),
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-50"
                   />
                 </label>
               </div>
 
-              <label className="mt-3 block text-xs font-medium text-slate-500">
+              <label className="mt-3 block text-xs font-medium text-text-mid">
                 Auto-execution threshold (max financial value for AUTO; empty =
                 unlimited)
                 <input
@@ -283,12 +281,12 @@ export default function AgentConfigPage() {
                         e.target.value === "" ? null : Number(e.target.value),
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
 
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-text-mid">
                   {runInfo
                     ? `${runInfo._count} run · ${(runInfo._sum.totalTokens ?? 0).toLocaleString()} token`
                     : "No runs yet"}
@@ -311,7 +309,7 @@ export default function AgentConfigPage() {
                       })
                     }
                     disabled={runNow.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-text-mid hover:bg-bg disabled:opacity-40"
                   >
                     <Play className="h-4 w-4" />
                     Run Now

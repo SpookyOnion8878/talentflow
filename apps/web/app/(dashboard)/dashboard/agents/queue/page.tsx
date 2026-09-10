@@ -77,7 +77,7 @@ export default function AgentQueuePage() {
       />
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading queue…</p>
+        <p className="text-sm text-text-mid">Loading queue…</p>
       ) : !actions?.length ? (
         <EmptyState
           title="No pending actions"
@@ -88,12 +88,12 @@ export default function AgentQueuePage() {
           {actions.map((action) => (
             <div
               key={action.id}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-border bg-surface p-5 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <ToolName tool={action.tool} />
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-text-mid">
                     {action.run.agentType} · {action.run.intent ?? "no intent"}{" "}
                     · run {action.run.id.slice(0, 8)}
                   </p>
@@ -102,14 +102,14 @@ export default function AgentQueuePage() {
                   className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     action.mode === "AUTO"
                       ? "bg-green-50 text-green-700"
-                      : "bg-amber-50 text-amber-700"
+                      : "bg-amber-500/10 text-amber-700"
                   }`}
                 >
                   {action.mode}
                 </span>
               </div>
 
-              <pre className="mt-3 max-h-40 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+              <pre className="mt-3 max-h-40 overflow-auto rounded-lg bg-bg p-3 text-xs text-text-mid">
                 {JSON.stringify(action.input, null, 2)}
               </pre>
 
@@ -128,20 +128,20 @@ export default function AgentQueuePage() {
                   onClick={() =>
                     setRejectingId(rejectingId === action.id ? null : action.id)
                   }
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-text-mid transition-colors hover:bg-bg"
                 >
                   Reject
                 </button>
               </div>
 
               {rejectingId === action.id && (
-                <div className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="mt-3 space-y-2 rounded-lg border border-border bg-bg p-3">
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Rejection reason (required for audit)"
                     rows={2}
-                    className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-primary-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border p-2 text-sm focus:border-primary-500 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -157,7 +157,7 @@ export default function AgentQueuePage() {
         </div>
       )}
 
-      <p className="flex items-center gap-1.5 text-xs text-slate-500">
+      <p className="flex items-center gap-1.5 text-xs text-text-mid">
         <ShieldCheck className="h-3.5 w-3.5" />
         Every execution still passes through the guardrail & is recorded in the
         Audit Log.

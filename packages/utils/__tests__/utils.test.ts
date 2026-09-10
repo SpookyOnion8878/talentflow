@@ -6,7 +6,6 @@ import {
   truncate,
   generateInvoiceNumber,
   generateContractNumber,
-  getStatusColor,
   getDaysBetween,
   isOverdue,
 } from "../src/index";
@@ -67,16 +66,6 @@ describe("generateContractNumber", () => {
   it("generates with CTR prefix", () => {
     const num = generateContractNumber();
     expect(num).toMatch(/^CTR-/);
-  });
-});
-
-describe("getStatusColor", () => {
-  it("returns correct color for ACTIVE", () => {
-    expect(getStatusColor("ACTIVE")).toContain("green");
-  });
-
-  it("returns default for unknown status", () => {
-    expect(getStatusColor("UNKNOWN")).toContain("gray");
   });
 });
 

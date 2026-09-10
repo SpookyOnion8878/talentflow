@@ -83,36 +83,6 @@ export function generateContractNumber(): string {
   return generateInvoiceNumber("CTR");
 }
 
-// ─── Status Helpers ───
-export function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    ACTIVE: "text-green-600 bg-green-50",
-    INACTIVE: "text-gray-500 bg-gray-100",
-    PENDING: "text-yellow-600 bg-yellow-50",
-    COMPLETED: "text-blue-600 bg-blue-50",
-    REJECTED: "text-red-600 bg-red-50",
-    DRAFT: "text-gray-600 bg-gray-50",
-    OVERDUE: "text-red-600 bg-red-50",
-    PAID: "text-green-600 bg-green-50",
-    SIGNED: "text-blue-600 bg-blue-50",
-    EXPIRED: "text-orange-600 bg-orange-50",
-    SUSPENDED: "text-red-600 bg-red-50",
-    BLACKLISTED: "text-red-600 bg-red-50",
-    ON_HOLD: "text-amber-600 bg-amber-50",
-    ARCHIVED: "text-gray-500 bg-gray-100",
-    VIEWED: "text-blue-600 bg-blue-50",
-    TERMINATED: "text-red-600 bg-red-50",
-    APPROVED: "text-green-600 bg-green-50",
-    REVISED: "text-amber-600 bg-amber-50",
-    VERIFIED: "text-green-600 bg-green-50",
-    PROCESSING: "text-blue-600 bg-blue-50",
-    FAILED: "text-red-600 bg-red-50",
-    REFUNDED: "text-gray-500 bg-gray-100",
-    CANCELLED: "text-gray-500 bg-gray-100",
-  };
-  return colors[status] || "text-gray-600 bg-gray-50";
-}
-
 // ─── Pagination Helpers ───
 export function paginate<T>(
   items: T[],

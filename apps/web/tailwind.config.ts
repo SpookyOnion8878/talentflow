@@ -9,6 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /* Semantic surface/text tokens — channels defined in globals.css
+           per theme (.dark overrides). Never use raw slate colors in
+           components; use these tokens so both themes render correctly. */
+        bg: "rgb(var(--bg-channel) / <alpha-value>)",
+        surface: "rgb(var(--surface-channel) / <alpha-value>)",
+        "surface-2": "rgb(var(--surface-2-channel) / <alpha-value>)",
+        border: "rgb(var(--border-channel) / <alpha-value>)",
+        "text-hi": "rgb(var(--text-hi-channel) / <alpha-value>)",
+        "text-mid": "rgb(var(--text-mid-channel) / <alpha-value>)",
+        "text-lo": "rgb(var(--text-lo-channel) / <alpha-value>)",
+        soft: "rgb(var(--accent-soft-channel) / <alpha-value>)",
+        link: "rgb(var(--link-channel) / <alpha-value>)",
         primary: {
           50: "#eef2ff",
           100: "#e0e7ff",
@@ -31,6 +43,12 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      borderColor: {
+        DEFAULT: "rgb(var(--border-channel) / 1)",
+      },
+      divideColor: {
+        DEFAULT: "rgb(var(--border-channel) / 1)",
       },
       boxShadow: {
         card: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06)",

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -30,13 +31,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const theme =
+    (await cookies()).get("tf_theme")?.value === "dark" ? "dark" : "";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={theme} suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>

@@ -4,13 +4,13 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-        <FileQuestion className="h-6 w-6 text-slate-400" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
+        <FileQuestion className="h-6 w-6 text-text-lo" />
       </div>
-      <h2 className="mt-4 text-base font-semibold text-slate-900">
+      <h2 className="mt-4 text-base font-semibold text-text-hi">
         Page not found
       </h2>
-      <p className="mt-1 max-w-md text-sm text-slate-500">
+      <p className="mt-1 max-w-md text-sm text-text-mid">
         The page you are looking for does not exist or you do not have access to
         it.
       </p>

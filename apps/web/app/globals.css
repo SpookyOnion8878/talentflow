@@ -2,18 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Semantic theme tokens (Clean & Dense direction) ───────────────────
+   Channels are space-separated RGB so Tailwind alpha modifiers work
+   (e.g. bg-surface/80). Components must use token utilities
+   (bg-surface, text-text-mid, border-border …) — never raw slate
+   colors — so light/dark both render correctly. */
 @layer base {
+  :root {
+    color-scheme: light;
+    --bg-channel: 248 250 252; /* slate-50 */
+    --surface-channel: 255 255 255;
+    --surface-2-channel: 241 245 249; /* slate-100 */
+    --border-channel: 226 232 240; /* slate-200 */
+    --text-hi-channel: 15 23 42; /* slate-900 */
+    --text-mid-channel: 71 85 105; /* slate-600 */
+    --text-lo-channel: 148 163 184; /* slate-400 */
+    --accent-soft-channel: 238 242 255; /* indigo-50 */
+    --link-channel: 79 70 229; /* indigo-600 */
+  }
+
+  .dark {
+    color-scheme: dark;
+    --bg-channel: 2 6 23; /* slate-950 */
+    --surface-channel: 15 23 42; /* slate-900 */
+    --surface-2-channel: 30 41 59; /* slate-800 */
+    --border-channel: 51 65 85; /* slate-700 */
+    --text-hi-channel: 241 245 249; /* slate-100 */
+    --text-mid-channel: 148 163 184; /* slate-400 */
+    --text-lo-channel: 100 116 139; /* slate-500 */
+    --accent-soft-channel: 49 46 129; /* indigo-950-ish soft fill */
+    --link-channel: 129 140 248; /* indigo-400 */
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-bg text-text-hi antialiased;
   }
 
   ::selection {
     @apply bg-primary-500/20 text-primary-900;
   }
 
+  .dark ::selection {
+    @apply text-primary-100;
+  }
+
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+    scrollbar-color: rgb(var(--border-channel)) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -26,10 +61,10 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-slate-300;
+    @apply rounded-full bg-border;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-400;
+    @apply bg-text-lo;
   }
 }

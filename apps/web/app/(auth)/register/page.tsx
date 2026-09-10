@@ -50,7 +50,7 @@ export default function RegisterPage() {
   };
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30";
+    "mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text-hi shadow-sm transition-all placeholder:text-text-lo focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30";
 
   return (
     <AuthShell>
@@ -59,16 +59,16 @@ export default function RegisterPage() {
           <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient shadow-lg shadow-primary-500/25 lg:hidden">
             <Zap className="h-6 w-6 text-white" fill="currentColor" />
           </span>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-text-hi">
             Create your account
           </h2>
-          <p className="mt-1.5 text-sm text-slate-500">
+          <p className="mt-1.5 text-sm text-text-mid">
             Start managing your freelance workforce today.
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-500/10 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -77,12 +77,12 @@ export default function RegisterPage() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-text-mid"
             >
               Full Name
             </label>
             <div className="relative">
-              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-lo" />
               <input
                 id="name"
                 name="name"
@@ -99,12 +99,12 @@ export default function RegisterPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-text-mid"
             >
               Work Email
             </label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-lo" />
               <input
                 id="email"
                 name="email"
@@ -120,12 +120,12 @@ export default function RegisterPage() {
           <div>
             <label
               htmlFor="company"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-text-mid"
             >
               Company Name
             </label>
             <div className="relative">
-              <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-lo" />
               <input
                 id="company"
                 name="company"
@@ -142,12 +142,12 @@ export default function RegisterPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-text-mid"
             >
               Password
             </label>
             <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-lo" />
               <input
                 id="password"
                 name="password"
@@ -171,15 +171,15 @@ export default function RegisterPage() {
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
 
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-text-lo">
             By registering, you agree to our Terms of Service and Privacy
             Policy.
           </p>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-text-mid">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-semibold text-primary-600 hover:text-primary-500"
+              className="font-semibold text-link hover:text-link"
             >
               Sign in
             </Link>

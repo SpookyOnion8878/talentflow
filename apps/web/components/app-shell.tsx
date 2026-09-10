@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { NotificationCenter } from "./notification-center";
+import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -206,7 +207,7 @@ export function AppShell({
     "Dashboard";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-bg">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar lg:flex">
         <SidebarContent pathname={pathname} user={{ ...user, initial }} />
@@ -231,24 +232,25 @@ export function AppShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 shadow-topbar backdrop-blur-md sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 shadow-topbar backdrop-blur-md sm:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
+              className="rounded-lg p-2 text-text-mid transition-colors hover:bg-surface-2 lg:hidden"
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+            <h1 className="text-base font-semibold tracking-tight text-text-hi sm:text-lg">
               {title}
             </h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
             <NotificationCenter />
-            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-semibold text-white ring-2 ring-white">
+            <div className="hidden h-8 w-px bg-border sm:block" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-semibold text-white ring-2 ring-surface">
               {initial}
             </div>
           </div>

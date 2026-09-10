@@ -21,18 +21,18 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
         <AlertTriangle className="h-6 w-6 text-red-500" />
       </div>
-      <h2 className="mt-4 text-base font-semibold text-slate-900">
+      <h2 className="mt-4 text-base font-semibold text-text-hi">
         Something went wrong
       </h2>
-      <p className="mt-1 max-w-md text-sm text-slate-500">
+      <p className="mt-1 max-w-md text-sm text-text-mid">
         An unexpected error occurred. Your data is safe — try again, and if the
         problem persists, contact your workspace administrator.
       </p>
       {error.digest && (
-        <p className="mt-2 font-mono text-xs text-slate-400">
+        <p className="mt-2 font-mono text-xs text-text-lo">
           Reference: {error.digest}
         </p>
       )}

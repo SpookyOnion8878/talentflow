@@ -108,8 +108,8 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Settings</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-2xl font-bold text-text-hi">Settings</h2>
+        <p className="text-sm text-text-mid">
           Manage your account, company, and team settings
         </p>
       </div>
@@ -117,43 +117,43 @@ export default function SettingsPage() {
       {/* Company Settings */}
       <form
         onSubmit={handleSave}
-        className="rounded-xl border border-slate-200 bg-white p-6 shadow-card"
+        className="rounded-xl border border-border bg-surface p-6 shadow-card"
       >
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-text-hi">
           Company Information
         </h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text-mid">
               Company Name
             </label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text-mid">
               Industry
             </label>
             <input
               type="text"
               value={form.industry}
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text-mid">
               Website
             </label>
             <input
               type="url"
               value={form.website}
               onChange={(e) => setForm({ ...form, website: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
         </div>
@@ -170,9 +170,9 @@ export default function SettingsPage() {
       </form>
 
       {/* Plan & Billing */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-        <h3 className="text-lg font-semibold text-slate-900">Plan & Billing</h3>
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-primary-50 p-4">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+        <h3 className="text-lg font-semibold text-text-hi">Plan & Billing</h3>
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-soft p-4">
           <div>
             <p className="font-medium text-primary-900">
               {company?.plan === "PRO"
@@ -189,7 +189,7 @@ export default function SettingsPage() {
                   : "$99/month"}
             </p>
           </div>
-          <span className="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700">
+          <span className="rounded-full bg-soft px-3 py-1 text-xs font-semibold text-primary-700">
             {company?.plan}
           </span>
         </div>
@@ -197,22 +197,20 @@ export default function SettingsPage() {
 
       {/* Team Members */}
       {!membersError && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">
-              Team Members
-            </h3>
+            <h3 className="text-lg font-semibold text-text-hi">Team Members</h3>
           </div>
 
           <form
             onSubmit={handleInvite}
-            className="mt-4 space-y-3 rounded-lg bg-slate-50 p-4"
+            className="mt-4 space-y-3 rounded-lg bg-bg p-4"
           >
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-text-mid">
               The person must already have a TalentFlow account (they can{" "}
               <a
                 href="/register"
-                className="font-medium text-primary-600 hover:underline"
+                className="font-medium text-link hover:underline"
               >
                 register free
               </a>
@@ -221,7 +219,7 @@ export default function SettingsPage() {
             </p>
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-text-mid">
                   Invite by email
                 </label>
                 <input
@@ -229,18 +227,18 @@ export default function SettingsPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="teammate@company.com"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-text-mid">
                   Role
                 </label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                 >
                   <option value="ADMIN">Admin</option>
                   <option value="MANAGER">Manager</option>
@@ -268,15 +266,15 @@ export default function SettingsPage() {
                 className="flex items-center justify-between py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-text-hi">
                     {member.user.name ?? member.user.email}
                   </p>
-                  <p className="text-xs text-slate-500">{member.user.email}</p>
+                  <p className="text-xs text-text-mid">{member.user.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={member.status} />
                   {member.role === "OWNER" ? (
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-mid">
                       {ROLE_LABELS[member.role]}
                     </span>
                   ) : (
@@ -288,7 +286,7 @@ export default function SettingsPage() {
                           e.target.value as MemberRole,
                         )
                       }
-                      className="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-primary-500 focus:outline-none"
+                      className="rounded-lg border border-border px-2 py-1 text-xs focus:border-primary-500 focus:outline-none"
                     >
                       <option value="ADMIN">Admin</option>
                       <option value="MANAGER">Manager</option>
@@ -300,9 +298,7 @@ export default function SettingsPage() {
               </div>
             ))}
             {members?.length === 0 && (
-              <p className="py-3 text-sm text-slate-500">
-                No team members yet.
-              </p>
+              <p className="py-3 text-sm text-text-mid">No team members yet.</p>
             )}
           </div>
         </div>

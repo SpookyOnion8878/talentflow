@@ -72,7 +72,7 @@ export default async function PaymentsPage() {
         <StatCard
           label="Total Transactions"
           value={summary.totalCount}
-          color="text-primary-600 bg-primary-50"
+          color="text-link bg-soft"
         />
       </div>
 
@@ -82,53 +82,53 @@ export default async function PaymentsPage() {
           description="Payments will appear here once invoices are paid"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-bg">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Invoice
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Freelancer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Reference
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-mid">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 bg-surface">
               {data.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                <tr key={p.id} className="hover:bg-bg">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-text-hi">
                     {p.invoice.invoiceNo}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {p.invoice.freelancer.firstName}{" "}
                     {p.invoice.freelancer.lastName}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-text-hi">
                     {formatCurrency(p.amount, p.currency)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {METHOD_LABELS[p.method] ?? p.method}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {p.reference ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-text-mid">
                     {p.processedAt ? formatDate(p.processedAt) : "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
