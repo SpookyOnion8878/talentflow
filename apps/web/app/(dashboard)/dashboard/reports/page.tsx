@@ -1,6 +1,13 @@
 ﻿import { caller } from "@/lib/trpc/caller";
 import { PageHeader } from "@repo/ui/page-header";
 import { formatCurrency } from "@repo/utils";
+import {
+  CHART_COLORS,
+  InvoiceAgingChart,
+  MonthlySpendChart,
+  type AgingBucket,
+  type SpendBucket,
+} from "@/components/charts";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +24,54 @@ export default async function ReportsPage() {
   );
 
   const now = Date.now();
+
+  // Monthly spend buckets: last 6 calendar months, paid vs outstanding.
+  const bucketKey = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  const monthOrder: string[] = [];
+  const monthBuckets = new Map<string, SpendBucket>();
+  for (let i = 5; i >= 0; i -= 1) {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - i, 1);
+    const key = bucketKey(d);
+    monthOrder.push(key);
+    monthBuckets.set(key, { month: key, paid: 0, outstanding: 0 });
+  }
+  const mixedCurrency = new Set(invoices.data.map((i) => i.currency)).size > 1;
+  for (const invoice of invoices.data) {
+    const bucket = monthBuckets.get(bucketKey(new Date(invoice.createdAt)));
+    if (!bucket) continue;
+    if (invoice.status === "PAID") bucket.paid += invoice.totalAmount;
+    else if (["SENT", "VIEWED", "OVERDUE"].includes(invoice.status))
+      bucket.outstanding += invoice.totalAmount;
+  }
+  const spendData = monthOrder
+    .map((k) => monthBuckets.get(k)!)
+    .filter((b) => b.paid > 0 || b.outstanding > 0);
+
+  // Aging donut from lifecycle status counts (all company invoices).
+  const statusCounts = invoices.summary.statusCounts;
+  const agingData: AgingBucket[] = [
+    {
+      name: "Open",
+      value:
+        (statusCounts.SENT ?? 0) +
+        (statusCounts.VIEWED ?? 0) +
+        (statusCounts.OVERDUE ?? 0),
+      color: CHART_COLORS.open,
+    },
+    {
+      name: "Draft",
+      value: statusCounts.DRAFT ?? 0,
+      color: CHART_COLORS.draft,
+    },
+    {
+      name: "Paid",
+      value: statusCounts.PAID ?? 0,
+      color: CHART_COLORS.paid,
+    },
+    { name: "Cancelled", value: statusCounts.CANCELLED ?? 0, color: "#71717a" },
+  ].filter((b) => b.value > 0);
   const overdueInvoices = invoices.data.filter(
     (i) => i.status === "OVERDUE",
   ).length;
@@ -87,7 +142,7 @@ export default async function ReportsPage() {
                       </dd>
                     </div>
                   </dl>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-yellow-200">
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-amber-500/20">
                     <div
                       className="h-full bg-green-500"
                       style={{ width: `${paidPercent}%` }}
@@ -141,13 +196,13 @@ export default async function ReportsPage() {
         <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
           <h3 className="text-lg font-semibold text-text-hi">Invoice Aging</h3>
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-            <div className="rounded-lg bg-green-50 p-4">
+            <div className="rounded-lg bg-emerald-500/10 p-4">
               <p className="text-2xl font-bold text-green-700">
                 {currentInvoices}
               </p>
               <p className="text-xs text-green-600">Open</p>
             </div>
-            <div className="rounded-lg bg-yellow-50 p-4">
+            <div className="rounded-lg bg-amber-500/10 p-4">
               <p className="text-2xl font-bold text-yellow-700">
                 {invoices.summary.statusCounts.DRAFT ?? 0}
               </p>
@@ -197,6 +252,45 @@ export default async function ReportsPage() {
         </div>
       </div>
 
+      {/* Charts */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-base font-semibold text-text-hi">
+            Monthly Invoiced Amount
+          </h3>
+          <p className="mt-0.5 text-xs text-text-lo">
+            By invoice creation date —{" "}
+            {mixedCurrency
+              ? "amounts mix currencies (mixed-currency workspace)"
+              : "single currency"}
+          </p>
+          <div className="mt-4">
+            {spendData.length === 0 ? (
+              <p className="text-sm text-text-mid">
+                No invoices created in the last 6 months.
+              </p>
+            ) : (
+              <MonthlySpendChart data={spendData} />
+            )}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
+          <h3 className="text-base font-semibold text-text-hi">
+            Invoice Lifecycle
+          </h3>
+          <p className="mt-0.5 text-xs text-text-lo">
+            All invoices in this workspace by stage
+          </p>
+          <div className="mt-4">
+            {agingData.length === 0 ? (
+              <p className="text-sm text-text-mid">No invoices yet.</p>
+            ) : (
+              <InvoiceAgingChart data={agingData} />
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Utilization */}
       <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
         <h3 className="text-base font-semibold text-text-hi">
@@ -209,7 +303,7 @@ export default async function ReportsPage() {
             </p>
             <p className="text-xs text-link">Approved hours</p>
           </div>
-          <div className="rounded-lg bg-yellow-50 p-4 text-center">
+          <div className="rounded-lg bg-amber-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-yellow-700">
               {timesheets.pendingCount}
             </p>
