@@ -76,30 +76,51 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Active Freelancers"
-          value={stats.stats.activeFreelancers}
-          hint={`${stats.stats.freelancers} total`}
-        />
-        <StatCard
-          label="Active Projects"
-          value={stats.stats.activeProjects}
-          hint={`${stats.stats.projects} total`}
-          color="text-emerald-600 bg-emerald-500/10"
-        />
-        <StatCard
-          label="Pending Approvals"
-          value={stats.stats.pendingTimesheets}
-          hint={`${stats.stats.pendingInvoices} invoices not yet paid`}
-          color="text-amber-600 bg-amber-500/10"
-        />
-        <StatCard
-          label="Monthly Spend"
-          value={monthlySpendLabel}
-          color="text-violet-600 bg-violet-500/10"
-        />
+      {/* Focus: outstanding cash + secondary metrics */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Link
+          href="/dashboard/invoices"
+          className="group flex flex-col justify-between rounded-xl border border-border bg-surface p-6 shadow-card transition-shadow hover:shadow-card-hover"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] font-medium text-text-mid">
+              Outstanding invoices
+            </p>
+            <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-amber-600">
+              {stats.stats.pendingInvoices} unpaid
+            </span>
+          </div>
+          <p className="mt-3 text-4xl font-semibold leading-none tracking-tight text-text-hi tabular-nums">
+            {outstandingLabel}
+          </p>
+          <p className="mt-4 text-sm font-medium text-link group-hover:underline">
+            Review invoices →
+          </p>
+        </Link>
+        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
+          <StatCard
+            label="Active Freelancers"
+            value={stats.stats.activeFreelancers}
+            hint={`${stats.stats.freelancers} total`}
+          />
+          <StatCard
+            label="Active Projects"
+            value={stats.stats.activeProjects}
+            hint={`${stats.stats.projects} total`}
+            color="text-emerald-600 bg-emerald-500/10"
+          />
+          <StatCard
+            label="Pending Approvals"
+            value={stats.stats.pendingTimesheets}
+            hint={`${stats.stats.pendingInvoices} invoices not yet paid`}
+            color="text-amber-600 bg-amber-500/10"
+          />
+          <StatCard
+            label="Monthly Spend"
+            value={monthlySpendLabel}
+            color="text-violet-600 bg-violet-500/10"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -166,15 +187,15 @@ export default async function DashboardPage() {
             <h3 className="text-base font-semibold text-text-hi">Finance</h3>
             <div className="mt-5 space-y-5">
               <div>
-                <p className="text-sm text-text-mid">Outstanding</p>
-                <p className="mt-0.5 text-xl font-bold text-text-hi">
-                  {outstandingLabel}
-                </p>
-              </div>
-              <div>
                 <p className="text-sm text-text-mid">Total Paid</p>
                 <p className="mt-0.5 text-xl font-bold text-emerald-600">
                   {paidLabel}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-text-mid">Monthly Spend</p>
+                <p className="mt-0.5 text-xl font-bold text-text-hi">
+                  {monthlySpendLabel}
                 </p>
               </div>
             </div>
