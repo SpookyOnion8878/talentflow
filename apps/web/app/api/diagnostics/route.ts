@@ -43,7 +43,7 @@ export async function GET() {
       reachable: false,
       users: 0,
       error: "not probed",
-    },
+    } as { reachable: boolean; users?: number; error?: string },
   };
 
   const fatal: string[] = [];
