@@ -79,11 +79,11 @@ function isActive(pathname: string, href: string): boolean {
 function Logo() {
   return (
     <Link href="/dashboard" className="group flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient shadow-lg shadow-primary-600/25 transition-transform group-hover:scale-105">
+      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient shadow-lg shadow-primary-500/30 transition-transform group-hover:rotate-6 group-hover:scale-105">
         <Zap className="h-5 w-5 text-white" fill="currentColor" />
       </span>
-      <span className="text-lg font-bold tracking-tight text-white">
-        TalentFlow
+      <span className="text-lg font-extrabold tracking-tight text-white">
+        Talent<span className="text-primary-300">Flow</span>
       </span>
     </Link>
   );
@@ -104,7 +104,10 @@ function SidebarContent({
         <Logo />
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary-300/60">
+          Workspace
+        </p>
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
@@ -114,18 +117,18 @@ function SidebarContent({
               href={item.href}
               onClick={onNavigate}
               className={clsx(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                "group flex items-center gap-3 rounded-full px-3.5 py-2 text-sm font-medium transition-all",
                 active
-                  ? "bg-primary-500/10 text-sidebar-active ring-1 ring-inset ring-primary-400/20"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                  ? "bg-primary-500 text-white shadow-md shadow-primary-500/30"
+                  : "text-slate-400 hover:bg-white/5 hover:text-primary-200",
               )}
             >
               <Icon
                 className={clsx(
                   "h-[18px] w-[18px] transition-colors",
                   active
-                    ? "text-primary-400"
-                    : "text-slate-500 group-hover:text-slate-300",
+                    ? "text-white"
+                    : "text-slate-500 group-hover:text-primary-300",
                 )}
               />
               {item.label}
@@ -133,7 +136,7 @@ function SidebarContent({
           );
         })}
 
-        <p className="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <p className="px-3 pb-1 pt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary-300/60">
           AI Agents
         </p>
         {agentNavItems.map((item) => {
@@ -145,18 +148,18 @@ function SidebarContent({
               href={item.href}
               onClick={onNavigate}
               className={clsx(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                "group flex items-center gap-3 rounded-full px-3.5 py-2 text-sm font-medium transition-all",
                 active
-                  ? "bg-primary-500/10 text-sidebar-active ring-1 ring-inset ring-primary-400/20"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                  ? "bg-primary-500 text-white shadow-md shadow-primary-500/30"
+                  : "text-slate-400 hover:bg-white/5 hover:text-primary-200",
               )}
             >
               <Icon
                 className={clsx(
                   "h-[18px] w-[18px] transition-colors",
                   active
-                    ? "text-primary-400"
-                    : "text-slate-500 group-hover:text-slate-300",
+                    ? "text-white"
+                    : "text-slate-500 group-hover:text-primary-300",
                 )}
               />
               {item.label}
@@ -165,21 +168,21 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="border-t border-white/5 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white">
+      <div className="p-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/10">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white ring-2 ring-primary-400/40">
             {user.initial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-semibold text-white">
               {user.name}
             </p>
-            <p className="truncate text-xs text-slate-500">{user.email}</p>
+            <p className="truncate text-xs text-primary-300/70">{user.email}</p>
           </div>
           <Link
             href="/api/auth/signout"
             title="Sign out"
-            className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-primary-500 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
           </Link>
@@ -242,15 +245,19 @@ export function AppShell({
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-base font-semibold tracking-tight text-text-hi sm:text-lg">
+            <h1 className="flex items-center gap-2.5 text-base font-bold tracking-tight text-text-hi sm:text-lg">
+              <span
+                className="h-5 w-1 rounded-full bg-brand-gradient"
+                aria-hidden
+              />
               {title}
             </h1>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface-2/60 p-1 pl-2">
             <ThemeToggle />
             <NotificationCenter />
-            <div className="hidden h-8 w-px bg-border sm:block" />
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-semibold text-white ring-2 ring-surface">
+            <div className="h-6 w-px bg-border" aria-hidden />
+            <div className="mr-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-2 ring-primary-500/30">
               {initial}
             </div>
           </div>

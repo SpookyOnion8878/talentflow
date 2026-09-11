@@ -65,7 +65,7 @@ const STATUS_DOT: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const dot = STATUS_DOT[status] ?? "bg-slate-400";
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-text-mid">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-soft/60 px-2.5 py-0.5 text-xs font-medium text-text-mid ring-1 ring-primary-500/10">
       <span
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`}
         aria-hidden

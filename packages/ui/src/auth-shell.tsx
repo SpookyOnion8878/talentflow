@@ -15,7 +15,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 20% 20%, #818cf8 0, transparent 40%), radial-gradient(circle at 80% 70%, #8b5cf6 0, transparent 40%)",
+              "radial-gradient(circle at 20% 20%, #2dd4bf 0, transparent 40%), radial-gradient(circle at 80% 70%, #14b8a6 0, transparent 40%)",
           }}
         />
         <Link href="/" className="relative flex items-center gap-2.5">

@@ -344,7 +344,7 @@ export default async function HomePage() {
       <section className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-sidebar px-6 py-16 text-center sm:px-16">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary-500/25 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-violet-500/25 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-emerald-500/25 blur-3xl" />
           <h2 className="relative text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Ready to streamline your freelance workforce?
           </h2>

@@ -21,7 +21,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
       {action && (
         <Link
           href={action.href}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
+          className="inline-flex items-center gap-1.5 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-500/25 transition-transform hover:-translate-y-0.5"
         >
           <Plus className="h-4 w-4" />
           {action.label}

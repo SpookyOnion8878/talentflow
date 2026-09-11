@@ -31,8 +31,8 @@ function ActivityIcon({ type }: { type: string }) {
   const match = ACTIVITY_ICONS.find((a) => a.key === type);
   const Icon = match?.icon ?? Activity;
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft text-link">
-      <Icon className="h-4 w-4" />
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-soft text-link ring-1 ring-primary-500/15">
+      <Icon className="h-[17px] w-[17px]" />
     </div>
   );
 }
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
           <StatCard
             label="Monthly Spend"
             value={monthlySpendLabel}
-            color="text-violet-600 bg-violet-500/10"
+            color="text-sky-600 bg-sky-500/10"
           />
         </div>
       </div>

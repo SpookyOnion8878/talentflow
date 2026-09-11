@@ -17,8 +17,8 @@
     --text-hi-channel: 15 23 42; /* slate-900 */
     --text-mid-channel: 71 85 105; /* slate-600 */
     --text-lo-channel: 148 163 184; /* slate-400 */
-    --accent-soft-channel: 238 242 255; /* indigo-50 */
-    --link-channel: 79 70 229; /* indigo-600 */
+    --accent-soft-channel: 240 253 250; /* teal-50 */
+    --link-channel: 13 148 136; /* teal-600 */
   }
 
   .dark {
@@ -30,8 +30,8 @@
     --text-hi-channel: 241 245 249; /* slate-100 */
     --text-mid-channel: 148 163 184; /* slate-400 */
     --text-lo-channel: 100 116 139; /* slate-500 */
-    --accent-soft-channel: 49 46 129; /* indigo-950-ish soft fill */
-    --link-channel: 129 140 248; /* indigo-400 */
+    --accent-soft-channel: 4 47 46; /* teal-950 soft fill */
+    --link-channel: 45 212 191; /* teal-400 */
   }
 
   body {

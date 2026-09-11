@@ -23,7 +23,7 @@ const SERIES = {
   outstanding: "#f59e0b", // amber-500
   draft: "#94a3b8", // slate-400
   overdue: "#ef4444", // red-500
-  open: "#6366f1", // indigo-500
+  open: "#0ea5e9", // sky-500
 };
 
 const AXIS = { fontSize: 12, fill: "#94a3b8" };
