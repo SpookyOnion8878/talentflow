@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,11 @@ export async function GET() {
     app: {
       publicUrl: process.env.NEXT_PUBLIC_APP_URL ?? "(unset)",
     },
+    database: {
+      reachable: false,
+      users: 0,
+      error: "not probed",
+    },
   };
 
   const fatal: string[] = [];
@@ -46,6 +52,30 @@ export async function GET() {
   }
   if (!checks.nextAuth.secret.strong) {
     fatal.push("NEXTAUTH_SECRET missing or shorter than 32 chars");
+  }
+
+  // Live DB probe: reachable? seeded? (timeboxed so the endpoint can't hang)
+  try {
+    const users = await Promise.race([
+      prisma.user.count(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000),
+      ),
+    ]);
+    checks.database = { reachable: true, users };
+    if (users === 0) {
+      fatal.push(
+        "database reachable but EMPTY — run `pnpm db:migrate` + `pnpm db:seed`",
+      );
+    }
+  } catch (error) {
+    checks.database = {
+      reachable: false,
+      error: error instanceof Error ? error.message.slice(0, 200) : "unknown",
+    };
+    fatal.push(
+      "database unreachable (connection error — check DATABASE_URL host/SSL)",
+    );
   }
 
   return NextResponse.json(
